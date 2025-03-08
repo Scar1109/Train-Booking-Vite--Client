@@ -1,1 +1,31 @@
 @import "tailwindcss";
+
+@font-face {
+    font-family: "Product Sans";
+    font-style: normal;
+    src: url(./fonts/Product-Sans-Regular.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: "Product Sans Display-Medium";
+    font-style: normal;
+    src: url(./fonts/Product-Sans-Regular.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: "Product Sans Display-Italic";
+    font-style: normal;
+    src: url(./fonts/Product-Sans-Italic.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: "Product Sans Display-Bold";
+    font-style: normal;
+    src: url(./fonts/Product-Sans-Bold.ttf) format("truetype");
+}
+
+@font-face {
+    font-family: "Product Sans Display-Bold-Italic";
+    font-style: normal;
+    src: url(./fonts/Product-Sans-Bold-Italic.ttf) format("truetype");
+}
