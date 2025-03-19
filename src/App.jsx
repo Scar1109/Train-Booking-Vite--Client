@@ -3,13 +3,13 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./Pages/user/Home";
 import Login from "./Pages/auth/Login"
 import Signup from "./Pages/auth/Signup"
-import ContactUs from "./Pages/user/ContactUs"
 import Gallery from "./Pages/user/Gallery"
 import Terms from "./Pages/user/Terms"
 import TrainsList from "./Pages/user/TrainsList"
 import TicketShare from "./Pages/user/TicketShare"
 import UserProfile from "./Pages/user/UserProfile"
 import AdminDashboard from "./Pages/admin/AdminDashboard"
+import ContactUs from "./Pages/user/ContactUs"
 
 function App() {
     return (
@@ -26,6 +26,7 @@ function App() {
                     <Route path="/share-ticket" element={<TicketShare />} />
                     <Route path="/user-profile" element={<UserProfile />} />
                     <Route path="/admin/*" element={<AdminDashboard />} />
+
                 </Routes>
             </BrowserRouter>
         </div>

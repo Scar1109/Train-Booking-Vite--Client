@@ -29,3 +29,14 @@
     font-style: normal;
     src: url(./fonts/Product-Sans-Bold-Italic.ttf) format("truetype");
 }
+
+/* Special functionalities */
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.body {
+    background-color: #efefef;
+}
