@@ -317,18 +317,19 @@ const Home = () => {
             {/* Hero Section */}
             <div className="relative w-full h-[879px] mx-auto">
                 {/* Carousel (Background) */}
-                <Carousel autoplay className="absolute top-0 left-0 w-screen h-[879px] z-0">
+                <Carousel autoplay className="absolute top-0 left-0 min-h-[120vh] h-screen z-0">
                     {carouselImages.map((src, index) => (
-                        <div key={index} className="w-full h-[879px]">
+                        <div key={index} className="w-full h-screen">
                             <img src={src} alt={`carousel-${index}`} className="w-full h-full object-cover" />
                         </div>
                     ))}
                 </Carousel>
 
+
                 {/* Hero Content */}
-                <div className="absolute top-[50%] left-[50%] transform -translate-x-[120%] -translate-y-[50%] flex flex-col items-left text-left text-white z-20">
+                <div className="absolute top-[35%] left-[50%] transform -translate-x-[120%] -translate-y-[50%] flex flex-col items-left text-left text-white z-20">
                     <Icon icon="mdi:train" className="text-5xl mb-2" />
-                    <h2 className="text-5xl font-bold text-white drop-shadow-[2px_2px_4px_rgba(0,0,0,0.8)]">
+                    <h2 className="text-5xl font- text-white drop-shadow-[2px_2px_4px_rgba(0,0,0,0.8)]">
                         Welcome to Sri Lanka Railways
                     </h2>
                     <p className="text-lg mt-2 opacity-90 text-white drop-shadow-[2px_2px_4px_rgba(0,0,0,0.8)]">
