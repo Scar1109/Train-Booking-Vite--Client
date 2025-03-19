@@ -2,7 +2,7 @@ import React from "react";
 
 function FraudDetection() {
     return <div>
-        
+        Fraud Detection
     </div>;
 }
 
