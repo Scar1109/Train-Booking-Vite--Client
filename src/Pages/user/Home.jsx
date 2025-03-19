@@ -344,7 +344,7 @@ const Home = () => {
             </div>
 
             {/* Booking Section */}
-            <div className="relative w-full p-2 flex items-center justify-center  overflow-hidden mt-[-100px]">
+            <div className="relative w-full p-2 flex items-center justify-center  overflow-hidden mt-[-80px]">
                 <div className="w-full max-w-[1140px] bg-white p-0 shadow-lg  flex mb-10 mt-[-20px]">
                     {/* Left Section (Blue Background) */}
                     <div
@@ -491,7 +491,7 @@ const Home = () => {
             </div>
             <div className="container mx-auto px-8 py-12">
                 {/* Title */}
-                <h2 className="text-5xl font-bold mb-8">Our Services</h2>
+                <h2 className="text-5xl ml-[-28px] mb-8">Our Services</h2>
 
                 {/* Grid Layout */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
