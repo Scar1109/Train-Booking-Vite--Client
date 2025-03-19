@@ -1,19 +1,13 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import Footer from "../../components/Footer";
+import NavBar from "../../components/Navbar.Jsx";
 
 const Home = () => {
     return (
         <div className="bg-gray-100 min-h-screen">
             {/* Header Section */}
-            <header className="bg-blue-600 text-white text-center py-12">
-                <h1 className="text-4xl font-bold mb-4">
-                    Welcome to the Smart Railway Ticketing System
-                </h1>
-                <p className="text-lg">
-                    Experience secure and efficient railway ticket booking with
-                    fraud prevention and ticket sharing features.
-                </p>
-            </header>
+            <NavBar />
 
             {/* Main Content Section */}
             <main className="container mx-auto px-4 py-16">
@@ -73,20 +67,7 @@ const Home = () => {
             </main>
 
             {/* Footer Section */}
-            <footer className="bg-gray-800 text-white py-8">
-                <div className="container mx-auto text-center">
-                    <p>
-                        Contact us for more information:{" "}
-                        <a
-                            href="mailto:info@railwayticketsystem.com"
-                            className="underline"
-                        >
-                            info@railwayticketsystem.com
-                        </a>
-                    </p>
-                    <p>&copy; 2025 Smart Railway Ticketing System</p>
-                </div>
-            </footer>
+            <Footer />
         </div>
     );
 };
