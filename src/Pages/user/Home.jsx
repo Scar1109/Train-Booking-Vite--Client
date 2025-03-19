@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Carousel, Button, Switch } from "antd";
+import { Carousel, Button, Switch, Card } from "antd";
 import { Icon } from "@iconify/react";
 import Footer from "../../components/Footer";
 import NavBar from "../../components/NavBar";
@@ -11,6 +11,59 @@ const Home = () => {
     const [passengers, setPassengers] = useState(1);
     const [selectedImage, setSelectedImage] = useState(null);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const services = [
+        {
+            title: "Colombo Fort - Beliatta",
+            description: "Intercity & Express trains",
+            classTypes: "1st, 2nd and 3rd",
+            bgColor: "bg-white text-black",
+            border: "border border-gray-300",
+        },
+        {
+            title: "Colombo Fort - Badulla",
+            description: "Intercity & Express trains",
+            classTypes: "1st, 2nd, 3rd and observations saloon",
+            bgColor: "bg-white text-black",
+            border: "border border-gray-300",
+        },
+        {
+            title: "Colombo Fort - Talaimannar",
+            description: "Night mail train",
+            classTypes: "2nd class",
+            bgColor: "bg-white text-black",
+            border: "border border-gray-300",
+        },
+        {
+            title: "Colombo Fort - Jaffna",
+            description: "Intercity, Express & Night mail trains",
+            classTypes: "1st, 2nd and 3rd",
+            bgColor: "bg-gray-600 text-white",
+        },
+        {
+            title: "Colombo Fort - Trincomalee",
+            description: "Night mail train",
+            classTypes: "2nd and 3rd",
+            bgColor: "bg-gray-500 text-white",
+        },
+        {
+            title: "Kandy - Badulla",
+            description: "Slow train",
+            classTypes: "Observations saloon",
+            bgColor: "bg-gray-500 text-white",
+        },
+        {
+            title: "Colombo Fort - Kandy",
+            description: "Intercity & Express trains",
+            classTypes: "1st, 2nd, 3rd and observations saloon",
+            bgColor: "bg-gray-800 text-white",
+        },
+        {
+            title: "Colombo Fort - Batticaloa",
+            description: "Intercity, Express & Night mail trains",
+            classTypes: "1st, 2nd and 3rd",
+            bgColor: "bg-gray-800 text-white",
+        },
+    ];
 
     const carouselImages = [
         "https://i.ibb.co/xKC5MnLY/360-F-290795351-i0k-JX32-HPEdj-Tg-K1i-Sja-Dj-Tb9-MN3qk4-O.jpg",
@@ -27,7 +80,7 @@ const Home = () => {
         "https://i.ibb.co/YmwRDyM/18746020394-2cca2c3547-b.jpg",
         "https://i.ibb.co/s945KHJ9/train-sri-lanka-stock-031425-c2ae7e79d84d424f98218e8ec8d232b3.jpg",
         "https://i.ibb.co/Q3cZ6CFw/photo-1566296314736-6eaac1ca0cb9.jpg",
-      ];
+    ];
 
     const handleReturnChange = (checked) => {
         setIsReturn(checked);
@@ -362,7 +415,7 @@ const Home = () => {
             </div>
             <div className="container mx-auto p-8">
                 {/* Heading */}
-                <h2 className="text-5xl mb-6">Gallery</h2>
+                <h2 className="text-5xl ml-[-30px] mb-6">Gallery</h2>
 
                 {/* Image Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -406,7 +459,64 @@ const Home = () => {
                     </div>
                 )}
             </div>
-            
+            <div className="max-w-[1490px] mx-auto p-1">
+                {/* Heading */}
+                <h1 className="text-5xl ml-[-28px] mb-6 text-gray-900">History</h1>
+
+                {/* Paragraphs */}
+                <p className="text-gray-700 text-lg text-justify leading-relaxed">
+                    Rail was introduced in Sri Lanka in 1864 to transport coffee from plantations in the hill country district of Kandy to the port city of Colombo on its way to Europe and the world market. The coffee blight of 1871 destroyed many a fine plantation and tea replaced coffee. With the development of tea plantations in the 1880s, the joint-stock companies swallowed up the former individual proprietorship of the coffee era. Under corporate ownership and management control by companies, the process of production of tea became more sophisticated and needed more and more railways built to the Kandyan highlands. To send tea to Colombo and to transport labour, machinery, manure, rice, and foodstuff, etc to Kandy, another 100 miles of railways were constructed in the tea planting districts to serve the expanding tea domain.
+                </p>
+
+                <p className="text-gray-700 text-justify leading-relaxed mt-4">
+                    To serve the coconut plantations flourishing in the west, southwest and northwest coastal areas of the country, and the wet inland rubber plantations below the tea belt, railway lines were built in the wake of these agricultural developments. Thereafter, the need for cheap and safe travel in order to open up the hinterland of the country led to the expansion of the railway.
+                </p>
+
+                <p className="text-gray-700 text-lg  text-justify leading-relaxed mt-4">
+                    An extension of the Main Line to Kandy was made north to the ancient city of Anuradhapura, going further north to Kankesanturai and west to Talaimannar to connect the island with South India by ferry, to bring Indian labour for the tea and rubber plantations, and also import rice and other foodstuffs not indigenously produced in sufficient quantities.
+                </p>
+
+                <p className="text-gray-700 text-lg  text-justify leading-relaxed mt-4">
+                    Towards the east, there was little economic justification to lay a line to the dry zone in that direction, but it became strategically worthwhile to lay a line to the natural harbour of Trincomalee and also connect it to the provincial capital of Batticaloa. These lines were laid with light (21 kg) section rails, as was the narrow gauge section to serve the rubber plantations east of Colombo, known as the Kelani Valley Line.
+                </p>
+
+                <p className="text-gray-700 text-lg  text-justify leading-relaxed mt-4">
+                    Up country, a similar branch line was laid from Nanu Oya on the Main Line through very difficult terrain to serve the tea plantations around Nuwara Eliya. Track alignment was defined in this section about 140 years ago, when economic considerations were vastly different. The railways achieved modal superiority with speeds of 25 to 40 kmph in the hill country and 65 to 80 in the low country. Civil engineering criteria was influenced by the economic need to minimize cuts and fills, permitting gradients to 2 to 3% and minimizing bridge lengths. As a result, the alignment here is winding with very sharp curves.
+                </p>
+
+                <p className="text-gray-700 text-lg text-justify leading-relaxed mt-4 italic">
+                    'In the early days of the railways, the bulk of the freight was carried to the port of Colombo and as the port expanded, rail lines were laid to serve every pier.'
+                </p>
+            </div>
+            <div className="container mx-auto px-8 py-12">
+                {/* Title */}
+                <h2 className="text-5xl font-bold mb-8">Our Services</h2>
+
+                {/* Grid Layout */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+                    {services.map((service, index) => (
+                        <Card
+                            key={index}
+                            className={`p-6 rounded-lg shadow-md ${service.bgColor} ${service.border}`}
+                            bordered={true}
+                        >
+                            {/* Title */}
+                            <h3 className="font-bold text-lg">{service.title}</h3>
+
+                            {/* Description */}
+                            <p className="text-sm opacity-80 mt-1">{service.description}</p>
+
+                            {/* Available Class Types */}
+                            <p className="mt-2 text-sm">
+                                <span className="font-semibold">Available class types:</span>{" "}
+                                <span className="text-blue-600 font-semibold italic">
+                                    {service.classTypes}
+                                </span>
+                            </p>
+                        </Card>
+                    ))}
+                </div>
+            </div>
             {/* Footer Section */}
             {/* <Footer /> */}
         </div>
