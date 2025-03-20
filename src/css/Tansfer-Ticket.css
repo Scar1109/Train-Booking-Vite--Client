@@ -1,0 +1,321 @@
+/* Base styles */
+.page-container {
+    padding: 2rem 1rem;
+    margin: 0 auto;
+    max-width: 1200px;
+  }
+  
+  .page-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #1a365d;
+    margin-bottom: 0.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 1rem;
+  }
+  
+  /* Button styles */
+  .btn-primary {
+    background-color: #1a56db;
+    color: white;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: none;
+    transition: background-color 0.2s;
+  }
+  
+  .btn-primary:hover {
+    background-color: #1e429f;
+  }
+  
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .btn-secondary {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
+    transition: background-color 0.2s;
+  }
+  
+  .btn-secondary:hover {
+    background-color: #e5e7eb;
+  }
+  
+  /* Form elements */
+  .input-field {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: border-color 0.2s;
+  }
+  
+  .input-field:focus {
+    outline: none;
+    border-color: #1a56db;
+    box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+  }
+  
+  /* Badge styles */
+  .subtle-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  /* Railway specific colors */
+  .bg-railway-gray {
+    background-color: #f7f9fc;
+  }
+  
+  .bg-railway-blue {
+    background-color: #1a56db;
+  }
+  
+  .bg-railway-lightBlue {
+    background-color: #e6f0ff;
+  }
+  
+  .text-railway-blue {
+    color: #1a56db;
+  }
+  
+  .bg-railway-darkGray {
+    background-color: #2d3748;
+  }
+  
+  .text-railway-darkGray {
+    color: #2d3748;
+  }
+  
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .animate-scan {
+    animation: scan 2s linear infinite;
+  }
+  
+  .animate-pulse-slow {
+    animation: pulseSlow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-gradient-x {
+    animation: gradientX 3s linear infinite;
+  }
+  
+  .bg-size-200 {
+    background-size: 200% 200%;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes scan {
+    0% {
+      top: 0;
+      opacity: 0.8;
+    }
+    50% {
+      top: 100%;
+      opacity: 0.6;
+    }
+    100% {
+      top: 0;
+      opacity: 0.8;
+    }
+  }
+  
+  @keyframes pulseSlow {
+    0%,
+    100% {
+      opacity: 0;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  @keyframes gradientX {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  
+  /* TicketCard specific styles */
+  .bg-railway-darkGray {
+    color: #2d3748;
+  }
+  
+  /* Animated train */
+  @keyframes train {
+    0% {
+      left: 0%;
+    }
+    100% {
+      left: 100%;
+    }
+  }
+  
+  /* QR Code styles */
+  .qr-container {
+    padding: 1rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Status colors */
+  .status-active {
+    background-color: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+  }
+  
+  .status-transferred {
+    background-color: #fef9c3;
+    color: #854d0e;
+    border-color: #fef08a;
+  }
+  
+  .status-used {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    border-color: #e5e7eb;
+  }
+  
+  .status-expired {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+  }
+  
+  /* TicketHistory specific styles */
+  .filter-button {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .filter-button.active {
+    background-color: #1a56db;
+    color: white;
+    border-color: #1a56db;
+  }
+  
+  .filter-button:hover:not(.active) {
+    background-color: #f3f4f6;
+  }
+  
+  .history-item {
+    padding: 1.5rem;
+    transition: background-color 0.2s;
+  }
+  
+  .history-item:hover {
+    background-color: #f9fafb;
+  }
+  
+  .history-details {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #f9fafb;
+    border: 1px solid #f3f4f6;
+    border-radius: 0.5rem;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .transfer-icon-sent {
+    padding: 0.5rem;
+    border-radius: 9999px;
+    background-color: #ffedd5;
+  }
+  
+  .transfer-icon-received {
+    padding: 0.5rem;
+    border-radius: 9999px;
+    background-color: #e6f0ff;
+  }
+  
+  .verify-button {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background-color: #e6f0ff;
+    color: #1a56db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+  }
+  
+  .verify-button:hover {
+    background-color: #dbeafe;
+  }
+  
+  .empty-state {
+    padding: 2rem;
+    text-align: center;
+  }
+  
+  .empty-state-icon {
+    margin: 0 auto;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 9999px;
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  
+  

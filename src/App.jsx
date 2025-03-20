@@ -6,10 +6,13 @@ import Signup from "./Pages/auth/Signup"
 import Gallery from "./Pages/user/Gallery"
 import Terms from "./Pages/user/Terms"
 import TrainsList from "./Pages/user/TrainsList"
-import TicketShare from "./Pages/user/TicketShare"
+import TicketShare from "./Pages/user/TicketList"
 import UserProfile from "./Pages/user/UserProfile"
 import AdminDashboard from "./Pages/admin/AdminDashboard"
 import ContactUs from "./Pages/user/ContactUs"
+import TransferTicket from "./Pages/user/TransferTicket"
+import TicketHistory from "./Pages/user/TicketHistory"
+import ReciveTicket from "./Pages/user/ReciveTicket"
 
 function App() {
     return (
@@ -23,10 +26,12 @@ function App() {
                     <Route path="/gallery" element={<Gallery />} />
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/trains" element={<TrainsList />} />
-                    <Route path="/share-ticket" element={<TicketShare />} />
+                    <Route path="/TicketList" element={<TicketShare />} />
                     <Route path="/user-profile" element={<UserProfile />} />
                     <Route path="/admin/*" element={<AdminDashboard />} />
-
+                    <Route path="/transfer" element={<TransferTicket/>}/>
+                    <Route path="/ticket-history" element={<TicketHistory/>}/>
+                    <Route path="/receive" element={<ReciveTicket/>}/>
                 </Routes>
             </BrowserRouter>
         </div>
