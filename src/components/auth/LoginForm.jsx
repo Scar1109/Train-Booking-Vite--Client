@@ -2,7 +2,7 @@ import React from "react";
 import { Form, Input, Button, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import "../../assets/styles/RegisterStyle.css";
-import AxiosInstance from "../../../AxiosInstance";
+import AxiosInstance from "../../AxiosInstance";
 
 const LoginForm = () => {
     const navigate = useNavigate(); // Use useNavigate hook
