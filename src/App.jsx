@@ -10,6 +10,7 @@ import TicketShare from "./Pages/user/TicketShare"
 import UserProfile from "./Pages/user/UserProfile"
 import AdminDashboard from "./Pages/admin/AdminDashboard"
 import ContactUs from "./Pages/user/ContactUs"
+import TicketBooking from "./Pages/user/TicketBooking"
 
 function App() {
     return (
@@ -26,7 +27,7 @@ function App() {
                     <Route path="/share-ticket" element={<TicketShare />} />
                     <Route path="/user-profile" element={<UserProfile />} />
                     <Route path="/admin/*" element={<AdminDashboard />} />
-
+                    <Route path="/TicketBooking" element={<TicketBooking />} />
                 </Routes>
             </BrowserRouter>
         </div>

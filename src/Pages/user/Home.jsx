@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import Select from "react-select";
 import { Carousel, Button, Switch, Card } from "antd";
 import { Icon } from "@iconify/react";
 import Footer from "../../components/Footer";
@@ -81,6 +82,11 @@ const Home = () => {
         "https://i.ibb.co/s945KHJ9/train-sri-lanka-stock-031425-c2ae7e79d84d424f98218e8ec8d232b3.jpg",
         "https://i.ibb.co/Q3cZ6CFw/photo-1566296314736-6eaac1ca0cb9.jpg",
     ];
+    const navigate = useNavigate();
+
+    const handleSearch = () => {
+        navigate("/TicketBooking"); // Redirect to Ticket Booking Page
+    };
 
     const handleReturnChange = (checked) => {
         setIsReturn(checked);
@@ -120,33 +126,109 @@ const Home = () => {
     const GeneralPassengerForm = () => {
         const [isReturn, setIsReturn] = useState(false);
         const [passengers, setPassengers] = useState(1);
+        const [fromStation, setFromStation] = useState(null);
+        const [toStation, setToStation] = useState(null);
+        const [date, setDate] = useState("");
+        const [returnDate, setReturnDate] = useState("");
+
+        
+        // Error states for validation
+        const [errors, setErrors] = useState({
+            fromStation: false,
+            toStation: false,
+            date: false,
+            returnDate: false
+        });
+
+        // List of stations
+        const stationOptions = [
+            "Ahangama", "Aluthgama", "Ambalangoda", "Ambewela", "Anuradhapura",
+            "Anuradhapura Town", "Awissawella", "Bandarawela", "Batticaloa", "Beliatta",
+            "Benthota", "Beruwala", "China bay", "Chunnakam", "Colombo Fort",
+            "Demodara", "Demodara R", "Diyathalawa", "Ella", "Ella R",
+            "Eraur", "Galgamuwa", "Galle", "Galoya", "Gampaha",
+            "Gampola", "Greatwestern", "Habaraduwa", "Habarana", "Hali Ela",
+            "Haputhale", "Hatton", "Hikkaduwa", "Hingurakgoda", "Idalgasinna",
+            "Jaffna", "Kakirawa", "Kaluthara South", "Kamburugamuwa", "Kandy",
+            "Kankesanthurai", "Kanthale", "Kilinochchi", "Kodikamam", "Koggala",
+            "Kurunegala", "Madhupara", "Mahawa", "Makumbura", "Mannar",
+            "Maradhana", "Mathale", "Mathara", "Medawachchiya", "Mirigama",
+            "Mirissa", "Moratuwa", "Mount Laviniya", "Nagollagama", "Nanu Oya",
+            "Nawalapitiya", "Nugegoda", "Ohiya", "Omantha", "Pallai",
+            "Panadura", "Pattipola", "Peradeniya", "Polgahawela", "Puwakpitiya",
+            "Ragama", "Rambukkana", "Rathmalana", "Return Colombo", "Return Waga",
+            "Talimannar Pier", "Thambakagamuwa", "Thamuththegama", "Thandikulam", "Trincomalee",
+            "Unawatuna", "Valachchena", "Vauniya", "Veyangoda", "Wadduwa",
+            "Waligama", "Welikanda", "Wellawa", "Wellawatte"
+        ].map((station) => ({ value: station, label: station }));
+
+        // Handle Form Submission with Validation
+        const handleSubmit = (e) => {
+            e.preventDefault();
+
+            let newErrors = {
+                fromStation: !fromStation,
+                toStation: !toStation,
+                date: !date,
+                returnDate: isReturn && !returnDate, // Validate return date only if return is selected
+            };
+
+            setErrors(newErrors);
+
+            // If no errors, proceed
+            if (!Object.values(newErrors).includes(true)) {
+                console.log("Form submitted:", { fromStation, toStation, date, passengers, isReturn, returnDate });
+                alert("Form submitted successfully!");
+            }
+        };
 
         return (
             /* General Passenger Form */
-            <div className="mt-4 space-y-3 border border-gray-300 rounded-lg p-6">
+            <form className="mt-4 space-y-3 border border-gray-300 rounded-lg p-6" onSubmit={handleSubmit}>
                 <div className="grid grid-cols-3 gap-4">
+                    {/* From Station (Searchable) */}
                     <div>
                         <label className="block text-gray-600 text-sm font-medium">From</label>
-                        <select className="border rounded-md px-4 py-2 w-full">
-                            <option>Choose Station</option>
-                        </select>
+                        <Select
+                            options={stationOptions}
+                            value={fromStation}
+                            onChange={(selectedOption) => setFromStation(selectedOption)}
+                            placeholder="Choose Station"
+                            className={`border rounded-md w-full ${errors.fromStation ? "border-red-500" : ""}`}
+                        />
+                        {errors.fromStation && <p className="text-red-500 text-sm mt-1">Please select a station</p>}
                     </div>
 
+                    {/* To Station (Searchable) */}
                     <div>
                         <label className="block text-gray-600 text-sm font-medium">To</label>
-                        <select className="border rounded-md px-4 py-2 w-full">
-                            <option>Choose Station</option>
-                        </select>
+                        <Select
+                            options={stationOptions}
+                            value={toStation}
+                            onChange={(selectedOption) => setToStation(selectedOption)}
+                            placeholder="Choose Station"
+                            className={`border rounded-md w-full ${errors.toStation ? "border-red-500" : ""}`}
+                        />
+                        {errors.toStation && <p className="text-red-500 text-sm mt-1">Please select a station</p>}
                     </div>
 
+                    {/* Date */}
                     <div>
                         <label className="block text-gray-600 text-sm font-medium">Date</label>
-                        <input type="date" className="border rounded-md px-4 py-2 w-full" />
+                        <input
+                            type="date"
+                            className={`border rounded-md px-4 py-2 w-full ${errors.date ? "border-red-500" : ""}`}
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                        />
+                        {errors.date && <p className="text-red-500 text-sm mt-1">Please select a date</p>}
                     </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 items-center">
+                    {/* No of Passengers */}
                     <div>
+                        <label className="block text-gray-600 text-sm font-medium">No of Passengers</label>
                         <input
                             type="number"
                             min="1"
@@ -156,25 +238,51 @@ const Home = () => {
                         />
                     </div>
 
+                    {/* Return Toggle */}
                     <div className="flex items-center space-x-3">
                         <Switch checked={isReturn} onChange={() => setIsReturn(!isReturn)} />
                         <span className="text-gray-700 font-medium">Return</span>
                     </div>
 
+                    {/* Return Date Picker */}
                     {isReturn && (
-                        <input type="date" className="border rounded-md px-4 py-2 w-full" placeholder="Pick Return Date" />
+                        <div>
+                            <label className="block text-gray-600 text-sm font-medium">Return Date</label>
+                            <input
+                                type="date"
+                                className={`border rounded-md px-4 py-2 w-full ${errors.returnDate ? "border-red-500" : ""}`}
+                                value={returnDate}
+                                onChange={(e) => setReturnDate(e.target.value)}
+                            />
+                            {errors.returnDate && <p className="text-red-500 text-sm mt-1">Please select a return date</p>}
+                        </div>
                     )}
                 </div>
 
+                {/* Buttons */}
                 <div className="flex justify-end space-x-4">
-                    <button className="border px-6 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out cursor-pointer">
+                    <button
+                        type="button"
+                        onClick={handleSearch}
+                        className="border px-6 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out cursor-pointer"
+                    >
                         Search
                     </button>
-                    <button className="border px-6 py-2 rounded-md hover:bg-gray-100 transition duration-300 ease-in-out cursor-pointer">
+                    <button
+                        type="reset"
+                        onClick={() => {
+                            setFromStation(null);
+                            setToStation(null);
+                            setDate("");
+                            setReturnDate("");
+                            setErrors({});
+                        }}
+                        className="border px-6 py-2 rounded-md hover:bg-gray-100 transition duration-300 ease-in-out cursor-pointer"
+                    >
                         Reset
                     </button>
                 </div>
-            </div>
+            </form>
         );
     };
 
@@ -298,7 +406,7 @@ const Home = () => {
 
     /* Pension Warrant Passenger Form */
     const PensionPassengerForm = () => (
-        <div className="space-y-3 border border-gray-300 rounded-lg p-6">
+        <div className="space-y-3 border border-gray-300 rounded-lg p-6 h-50">
             <h2 className="text-lg font-bold">Pension Warrant Information</h2>
             <div className="grid grid-cols-3 gap-55">
                 <input type="text" placeholder="Pensioner Trip ID" className=" border rounded-md px-4 py-2 w-79" />
