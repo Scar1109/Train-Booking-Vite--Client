@@ -4,7 +4,8 @@ import {
     Dashboard,
     FraudDetection,
     Tickets,
-    Users
+    Users,
+    TrainList
 } from "./admin";
 
 function AdminRoutes() {
@@ -15,6 +16,7 @@ function AdminRoutes() {
                 <Route path="/fraud-detection" element={<FraudDetection />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/tickets" element={<Tickets />} />
+                <Route path="/train-list" element={<TrainList />} />
             </Routes>
         </div>
     );
