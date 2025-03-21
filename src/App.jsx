@@ -13,6 +13,7 @@ import ContactUs from "./Pages/user/ContactUs"
 import TransferTicket from "./Pages/user/TransferTicket"
 import TicketHistory from "./Pages/user/TicketHistory"
 import ReciveTicket from "./Pages/user/ReciveTicket"
+import ProfilePage from "./Pages/user/ProfilePage";
 
 function App() {
     return (
@@ -27,11 +28,11 @@ function App() {
                     <Route path="/terms" element={<Terms />} />
                     <Route path="/trains" element={<TrainsList />} />
                     <Route path="/TicketList" element={<TicketShare />} />
-                    <Route path="/user-profile" element={<UserProfile />} />
+                    <Route path="/user-profile" element={<ProfilePage />} />
                     <Route path="/admin/*" element={<AdminDashboard />} />
                     <Route path="/transfer" element={<TransferTicket/>}/>
                     <Route path="/ticket-history" element={<TicketHistory/>}/>
-                    <Route path="/receive" element={<ReciveTicket/>}/>
+                    <Route path="/receive/:token" element={<ReciveTicket/>}/>
                 </Routes>
             </BrowserRouter>
         </div>
