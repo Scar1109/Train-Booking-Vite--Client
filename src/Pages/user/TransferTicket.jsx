@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import Navbar from "../../components/Navbar"
 import TicketCard from "../../components/TicketCard"
-import { QrCode, Users, Search, ArrowRightLeft, AlertTriangle, CheckCircle2, Mail, Lock } from "lucide-react"
+import { QrCode, ArrowRightLeft, AlertTriangle, CheckCircle2, Lock, Copy, Timer } from "lucide-react"
 // Import the CSS file
 import "../../css/Tansfer-Ticket.css"
 
@@ -45,65 +45,27 @@ const dummyTickets = [
   },
 ]
 
-// Dummy registered users for transfer
-const registeredUsers = [
-  {
-    id: 1,
-    name: "Sarah Silva",
-    email: "sarah.silva@example.com",
-    verified: true,
-    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-  },
-  {
-    id: 2,
-    name: "Michael Fernando",
-    email: "michael.f@example.com",
-    verified: true,
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-  },
-  {
-    id: 3,
-    name: "Priya Jayasinghe",
-    email: "priya.j@example.com",
-    verified: false,
-    avatar: "https://randomuser.me/api/portraits/women/68.jpg",
-  },
-  {
-    id: 4,
-    name: "David Rajapakse",
-    email: "david.r@example.com",
-    verified: true,
-    avatar: "https://randomuser.me/api/portraits/men/62.jpg",
-  },
-  {
-    id: 5,
-    name: "Amal Perera",
-    email: "amal.p@example.com",
-    verified: true,
-    avatar: "https://randomuser.me/api/portraits/men/81.jpg",
-  },
-]
-
 const TransferTicket = () => {
   const location = useLocation()
   const navigate = useNavigate()
-  const qrScannerRef = useRef(null)
 
   // Get ticket from location state or use dummy data
   const [selectedTicket, setSelectedTicket] = useState(location.state?.ticket || null)
-
   const [availableTickets, setAvailableTickets] = useState(dummyTickets)
   const [step, setStep] = useState(1)
-  const [transferMethod, setTransferMethod] = useState("email")
-  const [recipient, setRecipient] = useState("")
-  const [searchResults, setSearchResults] = useState([])
-  const [selectedUser, setSelectedUser] = useState(null)
   const [transferReason, setTransferReason] = useState("")
-  const [isSearching, setIsSearching] = useState(false)
   const [isTransferring, setIsTransferring] = useState(false)
   const [transferComplete, setTransferComplete] = useState(false)
-  const [qrScanActive, setQrScanActive] = useState(false)
-  const [securityPin, setSecurityPin] = useState("")
+
+  // New state variables for the updated flow
+  const [transferLink, setTransferLink] = useState("")
+  const [qrCodeValue, setQrCodeValue] = useState("")
+  const [expiryTime, setExpiryTime] = useState(null)
+  const [remainingTime, setRemainingTime] = useState("")
+  const [otpValue, setOtpValue] = useState(["", "", "", "", "", ""])
+  const [isLinkCopied, setIsLinkCopied] = useState(false)
+  const [isOtpValid, setIsOtpValid] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
 
   // If a ticket was passed through location state, select it automatically
   useEffect(() => {
@@ -113,45 +75,46 @@ const TransferTicket = () => {
     }
   }, [location.state])
 
-  // Generate a random security PIN when transfer starts
+  // Generate a transfer link and QR code when moving to step 2
   useEffect(() => {
-    if (step === 3) {
-      // Generate a random 6-digit PIN
-      const pin = Math.floor(100000 + Math.random() * 900000).toString()
-      setSecurityPin(pin)
+    if (step === 2 && selectedTicket) {
+      // Generate a random token for the transfer link
+      const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+      const baseUrl = window.location.origin
+      const link = `${baseUrl}/receive-ticket/${token}`
+      setTransferLink(link)
+      setQrCodeValue(link)
+
+      // Set expiry time to 30 minutes from now
+      const expiry = new Date()
+      expiry.setMinutes(expiry.getMinutes() + 30)
+      setExpiryTime(expiry)
     }
-  }, [step])
+  }, [step, selectedTicket])
 
-  // Handle searching for users
-  const handleSearch = (e) => {
-    const searchTerm = e.target.value
-    setRecipient(searchTerm)
+  // Update remaining time every second
+  useEffect(() => {
+    if (!expiryTime) return
 
-    if (searchTerm.length < 2) {
-      setSearchResults([])
-      return
-    }
+    const interval = setInterval(() => {
+      const now = new Date()
+      const diff = expiryTime.getTime() - now.getTime()
 
-    setIsSearching(true)
+      if (diff <= 0) {
+        clearInterval(interval)
+        setRemainingTime("Expired")
+        toast.error("Transfer link has expired. Please generate a new one.")
+        setStep(1)
+        return
+      }
 
-    // Simulate API call delay
-    setTimeout(() => {
-      const filtered = registeredUsers.filter(
-        (user) =>
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-      setSearchResults(filtered)
-      setIsSearching(false)
-    }, 500)
-  }
+      const minutes = Math.floor(diff / 60000)
+      const seconds = Math.floor((diff % 60000) / 1000)
+      setRemainingTime(`${minutes}:${seconds.toString().padStart(2, "0")}`)
+    }, 1000)
 
-  // Handle selecting a user from search results
-  const handleSelectUser = (user) => {
-    setSelectedUser(user)
-    setRecipient(user.name)
-    setSearchResults([])
-  }
+    return () => clearInterval(interval)
+  }, [expiryTime])
 
   // Handle ticket selection
   const handleSelectTicket = (ticket) => {
@@ -159,26 +122,66 @@ const TransferTicket = () => {
     setStep(2)
   }
 
-  // Toggle QR scanner
-  const toggleQrScanner = () => {
-    setQrScanActive(!qrScanActive)
-    if (!qrScanActive) {
-      // In a real app, we would initialize the QR scanner here
-      setTimeout(() => {
-        // Simulate finding a user via QR code scan
-        const randomUser = registeredUsers[Math.floor(Math.random() * registeredUsers.length)]
-        handleSelectUser(randomUser)
-        setQrScanActive(false)
-        toast.success(`Found user: ${randomUser.name}`)
-      }, 3000)
+  // Handle OTP input change
+  const handleOtpChange = (index, value) => {
+    if (value.length > 1) {
+      value = value.charAt(0)
     }
+
+    const newOtp = [...otpValue]
+    newOtp[index] = value
+    setOtpValue(newOtp)
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`)
+      if (nextInput) {
+        nextInput.focus()
+      }
+    }
+  }
+
+  // Handle OTP verification
+  const verifyOtp = () => {
+    setIsVerifying(true)
+
+    // Simulate API call for OTP verification
+    setTimeout(() => {
+      const enteredOtp = otpValue.join("")
+      // In a real app, you would verify this with your backend
+      // For demo purposes, any 6-digit OTP is considered valid
+      const isValid = enteredOtp.length === 6 && /^\d+$/.test(enteredOtp)
+
+      setIsOtpValid(isValid)
+      setIsVerifying(false)
+
+      if (isValid) {
+        setStep(3)
+      } else {
+        toast.error("Invalid OTP. Please try again.")
+      }
+    }, 1500)
+  }
+
+  // Copy transfer link to clipboard
+  const copyLinkToClipboard = () => {
+    navigator.clipboard
+      .writeText(transferLink)
+      .then(() => {
+        setIsLinkCopied(true)
+        toast.success("Link copied to clipboard!")
+        setTimeout(() => setIsLinkCopied(false), 3000)
+      })
+      .catch((err) => {
+        toast.error("Failed to copy link")
+      })
   }
 
   // Handle form submission for transfer
   const handleSubmitTransfer = (e) => {
     e.preventDefault()
 
-    if (!selectedTicket || !selectedUser) {
+    if (!selectedTicket) {
       return
     }
 
@@ -203,7 +206,7 @@ const TransferTicket = () => {
       <div className="page-container max-w-4xl">
         <header className="mb-8 text-center">
           <h1 className="page-title">Transfer Your Ticket</h1>
-          <p className="text-gray-600 animate-fade-in">Securely transfer your ticket to another registered user</p>
+          <p className="text-gray-600 animate-fade-in">Securely transfer your ticket to another user</p>
         </header>
 
         {/* Progress Steps */}
@@ -229,7 +232,7 @@ const TransferTicket = () => {
                 2
               </div>
               <div className={`ml-2 text-sm ${step >= 2 ? "text-railway-blue font-medium" : "text-gray-500"}`}>
-                Select Recipient
+                Generate Link
               </div>
             </div>
 
@@ -329,52 +332,102 @@ const TransferTicket = () => {
         {step === 2 && (
           <div className="bg-white rounded-xl shadow-sm p-6 animate-slide-up">
             <h2 className="section-title flex items-center">
-              <Users className="h-5 w-5 mr-2 text-railway-blue" />
-              Select recipient
+              <QrCode className="h-5 w-5 mr-2 text-railway-blue" />
+              Secure Transfer Link
             </h2>
 
-            {/* Transfer method selection */}
-            <div className="mb-6 flex rounded-lg border border-gray-200 overflow-hidden">
-              <button
-                className={`flex-1 py-2 px-3 flex items-center justify-center text-sm ${transferMethod === "email" ? "bg-railway-blue text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}
-                onClick={() => setTransferMethod("email")}
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Find by Email
-              </button>
-              <button
-                className={`flex-1 py-2 px-3 flex items-center justify-center text-sm ${transferMethod === "qr" ? "bg-railway-blue text-white" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}
-                onClick={() => setTransferMethod("qr")}
-              >
-                <QrCode className="h-4 w-4 mr-2" />
-                Scan QR Code
-              </button>
-            </div>
-
-            {transferMethod === "email" && (
-              <div className="mt-4">
-                <div className="relative">
-                  <label htmlFor="recipient" className="block text-sm font-medium text-gray-700 mb-1">
-                    Search for a registered user
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <input
-                      id="recipient"
-                      type="text"
-                      value={recipient}
-                      onChange={handleSearch}
-                      placeholder="Name or email address"
-                      className="input-field pl-10"
-                    />
+            <div className="mt-4">
+              <div className="p-4 border border-yellow-200 rounded-lg bg-yellow-50 mb-6">
+                <div className="flex items-start">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600 mr-2 mt-0.5" />
+                  <div>
+                    <h3 className="font-medium text-yellow-800">Security Information</h3>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      A secure one-time link and QR code have been generated for this ticket transfer. This link will
+                      expire in <span className="font-medium">{remainingTime}</span> for security purposes.
+                    </p>
                   </div>
+                </div>
+              </div>
 
-                  {isSearching && (
-                    <div className="absolute right-3 top-9">
+              <div className="mb-6">
+                <h3 className="font-medium mb-2">Ticket Owner Details:</h3>
+                <TicketCard ticket={selectedTicket} />
+              </div>
+
+              <div className="mb-6 flex flex-col md:flex-row gap-6">
+                {/* QR Code */}
+                <div className="flex-1 border border-gray-200 rounded-lg p-4 flex flex-col items-center">
+                  <h3 className="font-medium mb-3 text-center">Scan QR Code</h3>
+                  <div className="bg-white p-2 border border-gray-300 rounded-lg mb-3">
+                    {/* Simulated QR code - in a real app, use a QR code library */}
+                    <div className="w-48 h-48 bg-gray-100 flex items-center justify-center">
+                      <QrCode className="h-32 w-32 text-railway-blue" />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 text-center">
+                    Let the recipient scan this QR code to access the ticket
+                  </p>
+                </div>
+
+                {/* Transfer Link */}
+                <div className="flex-1 border border-gray-200 rounded-lg p-4">
+                  <h3 className="font-medium mb-3">Share Transfer Link</h3>
+                  <div className="relative">
+                    <input type="text" value={transferLink} readOnly className="input-field pr-10 bg-gray-50 text-sm" />
+                    <button
+                      onClick={copyLinkToClipboard}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-railway-blue hover:text-railway-darkBlue"
+                      aria-label="Copy link"
+                    >
+                      {isLinkCopied ? <CheckCircle2 className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Send this link to the recipient. The link will expire in {remainingTime}.
+                  </p>
+
+                  <div className="mt-4 flex items-center">
+                    <Timer className="h-4 w-4 text-railway-blue mr-2" />
+                    <span className="text-sm font-medium">Expires in: {remainingTime}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6 border border-gray-200 rounded-lg p-4">
+                <h3 className="font-medium mb-3 flex items-center">
+                  <Lock className="h-4 w-4 mr-2 text-railway-blue" />
+                  Enter OTP from Recipient
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Ask the recipient to share the OTP they received after accessing the transfer link.
+                </p>
+
+                <div className="flex justify-center gap-2 mb-4">
+                  {otpValue.map((digit, index) => (
+                    <input
+                      key={index}
+                      id={`otp-${index}`}
+                      type="text"
+                      maxLength="1"
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      className="w-12 h-12 text-center text-xl font-bold border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-railway-blue"
+                    />
+                  ))}
+                </div>
+
+                <button
+                  onClick={verifyOtp}
+                  disabled={otpValue.join("").length !== 6 || isVerifying}
+                  className={`w-full btn-primary ${
+                    otpValue.join("").length !== 6 ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {isVerifying ? (
+                    <div className="flex items-center justify-center">
                       <svg
-                        className="animate-spin h-5 w-5 text-railway-blue"
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -393,156 +446,31 @@ const TransferTicket = () => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
+                      Verifying...
                     </div>
+                  ) : (
+                    "Verify OTP"
                   )}
-
-                  {searchResults.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto">
-                      <ul className="py-1">
-                        {searchResults.map((user) => (
-                          <li
-                            key={user.id}
-                            className="px-4 py-2 hover:bg-railway-lightBlue cursor-pointer flex items-center justify-between"
-                            onClick={() => handleSelectUser(user)}
-                          >
-                            <div className="flex items-center">
-                              {user.avatar ? (
-                                <img
-                                  src={user.avatar || "/placeholder.svg"}
-                                  alt={user.name}
-                                  className="h-8 w-8 rounded-full mr-3"
-                                />
-                              ) : (
-                                <div className="h-8 w-8 rounded-full bg-railway-lightBlue mr-3 flex items-center justify-center text-railway-blue font-medium">
-                                  {user.name.charAt(0)}
-                                </div>
-                              )}
-                              <div>
-                                <p className="font-medium">{user.name}</p>
-                                <p className="text-sm text-gray-500">{user.email}</p>
-                              </div>
-                            </div>
-                            {user.verified ? (
-                              <span className="subtle-badge bg-green-100 text-green-800">Verified</span>
-                            ) : (
-                              <span className="subtle-badge bg-yellow-100 text-yellow-800">Unverified</span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {recipient && searchResults.length === 0 && !isSearching && (
-                    <div className="mt-2 text-sm text-red-500 flex items-center">
-                      <AlertTriangle className="h-4 w-4 mr-1" />
-                      No users found matching your search.
-                    </div>
-                  )}
-                </div>
+                </button>
               </div>
-            )}
 
-            {transferMethod === "qr" && (
               <div className="mt-4">
-                <div className="border border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 flex flex-col items-center justify-center">
-                  {qrScanActive ? (
-                    <>
-                      <div className="relative w-64 h-64 bg-black rounded-lg overflow-hidden mb-4">
-                        <div className="absolute inset-0 flex items-center justify-center" ref={qrScannerRef}>
-                          {/* Simulated video feed */}
-                          <div className="w-full h-full bg-black opacity-80"></div>
-                          <div className="absolute inset-0 border-2 border-white opacity-50"></div>
-                          <div className="absolute w-40 h-40 border-2 border-railway-blue">
-                            <div className="absolute -top-2 -left-2 w-4 h-4 border-t-2 border-l-2 border-railway-blue"></div>
-                            <div className="absolute -top-2 -right-2 w-4 h-4 border-t-2 border-r-2 border-railway-blue"></div>
-                            <div className="absolute -bottom-2 -left-2 w-4 h-4 border-b-2 border-l-2 border-railway-blue"></div>
-                            <div className="absolute -bottom-2 -right-2 w-4 h-4 border-b-2 border-r-2 border-railway-blue"></div>
-                          </div>
-                          {/* Scanning animation */}
-                          <div className="absolute top-0 left-0 right-0 h-0.5 bg-railway-blue animate-scan"></div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-500 text-center mb-4">Scanning for recipient's QR code...</p>
-                      <button onClick={toggleQrScanner} className="btn-secondary">
-                        Cancel Scan
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <QrCode className="h-12 w-12 text-gray-400 mb-4" />
-                      <h3 className="font-medium text-gray-700 mb-2">Scan Recipient's QR Code</h3>
-                      <p className="text-sm text-gray-500 text-center mb-4">
-                        Ask the recipient to show their account QR code to initiate a direct transfer.
-                      </p>
-                      <button onClick={toggleQrScanner} className="btn-primary">
-                        Start Scanning
-                      </button>
-                    </>
-                  )}
-                </div>
+                <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-1">
+                  Reason for transfer (optional)
+                </label>
+                <textarea
+                  id="reason"
+                  value={transferReason}
+                  onChange={(e) => setTransferReason(e.target.value)}
+                  placeholder="e.g. Sharing with a family member"
+                  className="input-field min-h-[80px]"
+                ></textarea>
               </div>
-            )}
-
-            {selectedUser && (
-              <div className="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    {selectedUser.avatar ? (
-                      <img
-                        src={selectedUser.avatar || "/placeholder.svg"}
-                        alt={selectedUser.name}
-                        className="h-10 w-10 rounded-full mr-3"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-railway-lightBlue mr-3 flex items-center justify-center text-railway-blue font-medium">
-                        {selectedUser.name.charAt(0)}
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="font-medium">Selected recipient:</h3>
-                      <p className="text-railway-blue">{selectedUser.name}</p>
-                      <p className="text-sm text-gray-500">{selectedUser.email}</p>
-                    </div>
-                  </div>
-                  {selectedUser.verified ? (
-                    <span className="subtle-badge bg-green-100 text-green-800 flex items-center">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Verified User
-                    </span>
-                  ) : (
-                    <span className="subtle-badge bg-yellow-100 text-yellow-800 flex items-center">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
-                      Unverified User
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-4">
-              <label htmlFor="reason" className="block text-sm font-medium text-gray-700 mb-1">
-                Reason for transfer (optional)
-              </label>
-              <textarea
-                id="reason"
-                value={transferReason}
-                onChange={(e) => setTransferReason(e.target.value)}
-                placeholder="e.g. Sharing with a family member"
-                className="input-field min-h-[80px]"
-              ></textarea>
             </div>
 
             <div className="mt-6 flex justify-between">
               <button onClick={() => setStep(1)} className="btn-secondary">
                 Back
-              </button>
-              <button
-                onClick={() => selectedUser && setStep(3)}
-                disabled={!selectedUser}
-                className={`btn-primary ${!selectedUser ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                Continue
               </button>
             </div>
           </div>
@@ -551,11 +479,23 @@ const TransferTicket = () => {
         {step === 3 && (
           <div className="bg-white rounded-xl shadow-sm p-6 animate-slide-up">
             <h2 className="section-title flex items-center">
-              <Lock className="h-5 w-5 mr-2 text-railway-blue" />
+              <CheckCircle2 className="h-5 w-5 mr-2 text-railway-blue" />
               Confirm Ticket Transfer
             </h2>
 
             <div className="mt-4">
+              <div className="p-4 border border-green-200 rounded-lg bg-green-50 mb-6">
+                <div className="flex items-start">
+                  <CheckCircle2 className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
+                  <div>
+                    <h3 className="font-medium text-green-800">OTP Verified Successfully</h3>
+                    <p className="text-sm text-green-700 mt-1">
+                      The OTP has been verified. You can now complete the ticket transfer.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <p className="text-gray-600 mb-4">Please review the details below. Once you confirm the transfer:</p>
 
               <ul className="list-disc list-inside text-sm text-gray-600 mb-6 space-y-2">
@@ -566,57 +506,17 @@ const TransferTicket = () => {
                 <li>The remaining transfer count for this ticket will be reduced by 1</li>
               </ul>
 
-              {/* Security PIN information */}
-              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
-                <h3 className="font-medium text-yellow-800 flex items-center">
-                  <Lock className="h-4 w-4 mr-2" />
-                  Security Verification
-                </h3>
-                <p className="text-sm text-yellow-700 mb-3">
-                  For additional security, the recipient will need to enter this PIN to complete the transfer:
-                </p>
-                <div className="bg-white p-3 rounded border border-yellow-200 text-center">
-                  <span className="text-xl tracking-widest font-mono font-bold text-yellow-800">{securityPin}</span>
-                </div>
-                <p className="text-xs text-yellow-600 mt-2">
-                  Do not share this PIN with anyone other than the intended recipient.
-                </p>
-              </div>
-
               <div className="mb-6">
                 <h3 className="font-medium mb-2">Ticket Details:</h3>
                 <TicketCard ticket={selectedTicket} />
               </div>
 
-              <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 mb-6">
-                <h3 className="font-medium mb-1 flex items-center">
-                  <Users className="h-4 w-4 mr-2 text-railway-blue" />
-                  Recipient:
-                </h3>
-                <div className="flex items-center">
-                  {selectedUser?.avatar ? (
-                    <img
-                      src={selectedUser.avatar || "/placeholder.svg"}
-                      alt={selectedUser.name}
-                      className="h-8 w-8 rounded-full mr-2"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded-full bg-railway-lightBlue mr-2 flex items-center justify-center text-railway-blue font-medium">
-                      {selectedUser?.name.charAt(0)}
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-railway-blue font-medium">{selectedUser?.name}</p>
-                    <p className="text-sm text-gray-500">{selectedUser?.email}</p>
-                  </div>
+              {transferReason && (
+                <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 mb-6">
+                  <h3 className="font-medium mb-1">Reason for transfer:</h3>
+                  <p className="text-sm text-gray-700">{transferReason}</p>
                 </div>
-                {transferReason && (
-                  <>
-                    <h3 className="font-medium mt-3 mb-1">Reason for transfer:</h3>
-                    <p className="text-sm text-gray-700">{transferReason}</p>
-                  </>
-                )}
-              </div>
+              )}
 
               <div className="flex items-center mb-6">
                 <input
@@ -686,12 +586,12 @@ const TransferTicket = () => {
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Transfer Successful!</h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  The ticket has been successfully transferred to {selectedUser?.name}.
+                  The ticket has been successfully transferred to the recipient.
                 </p>
                 <div className="bg-green-50 border border-green-100 rounded-lg p-3 mb-4 text-left">
                   <p className="text-sm text-green-800">
-                    <span className="font-medium">Security confirmation:</span> A notification has been sent to the
-                    recipient with all ticket details and a secure access link.
+                    <span className="font-medium">Security confirmation:</span> The recipient now has full access to the
+                    ticket details and can use it for their journey.
                   </p>
                 </div>
                 <p className="text-xs text-gray-500 mb-4">Redirecting to your transfer history...</p>

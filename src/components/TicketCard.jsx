@@ -67,7 +67,7 @@ const TicketCard = ({ ticket, showTransferButton = false, onTransfer = () => {} 
     >
       <div className="relative">
         {/* Top part with route and status */}
-        <div className="relative bg-gradient-to-r from-railway-blue to-blue-700 h-12 flex items-center justify-between px-4 text-white">
+         <div className="relative bg-gradient-to-b from-blue-700 to-blue-400 h-12 flex items-center justify-between px-4">
           <div className="flex items-center">
             <div className="w-8 h-8 flex-shrink-0 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <Train className="h-4 w-4 text-white" />
