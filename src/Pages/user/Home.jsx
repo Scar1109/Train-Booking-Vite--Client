@@ -82,11 +82,7 @@ const Home = () => {
         "https://i.ibb.co/s945KHJ9/train-sri-lanka-stock-031425-c2ae7e79d84d424f98218e8ec8d232b3.jpg",
         "https://i.ibb.co/Q3cZ6CFw/photo-1566296314736-6eaac1ca0cb9.jpg",
     ];
-    const navigate = useNavigate();
-
-    const handleSearch = () => {
-        navigate("/TicketBooking"); // Redirect to Ticket Booking Page
-    };
+    
 
     const handleReturnChange = (checked) => {
         setIsReturn(checked);
@@ -130,8 +126,8 @@ const Home = () => {
         const [toStation, setToStation] = useState(null);
         const [date, setDate] = useState("");
         const [returnDate, setReturnDate] = useState("");
+        const navigate = useNavigate();
 
-        
         // Error states for validation
         const [errors, setErrors] = useState({
             fromStation: false,
@@ -163,28 +159,29 @@ const Home = () => {
         ].map((station) => ({ value: station, label: station }));
 
         // Handle Form Submission with Validation
-        const handleSubmit = (e) => {
+        const handleSearch = (e) => {
             e.preventDefault();
 
             let newErrors = {
                 fromStation: !fromStation,
                 toStation: !toStation,
                 date: !date,
-                returnDate: isReturn && !returnDate, // Validate return date only if return is selected
+                returnDate: isReturn && !returnDate,
+                passengers: passengers < 1
             };
 
             setErrors(newErrors);
-
-            // If no errors, proceed
+            
+            // If no errors, navigate to TicketBooking page
             if (!Object.values(newErrors).includes(true)) {
                 console.log("Form submitted:", { fromStation, toStation, date, passengers, isReturn, returnDate });
-                alert("Form submitted successfully!");
+                navigate("/TicketBooking", { state: { startStep: 2 } }); // Navigate with state to start at step 2
             }
         };
 
         return (
             /* General Passenger Form */
-            <form className="mt-4 space-y-3 border border-gray-300 rounded-lg p-6" onSubmit={handleSubmit}>
+            <form className="mt-4 space-y-3 border border-gray-300 rounded-lg p-6" onSubmit={handleSearch}>
                 <div className="grid grid-cols-3 gap-4">
                     {/* From Station (Searchable) */}
                     <div>
@@ -234,8 +231,9 @@ const Home = () => {
                             min="1"
                             value={passengers}
                             onChange={(e) => setPassengers(Number(e.target.value))}
-                            className="border rounded-md px-4 py-2 w-full"
+                            className={`border rounded-md px-4 py-2 w-full ${errors.passengers ? "border-red-500" : ""}`}
                         />
+                        {errors.passengers && <p className="text-red-500 text-sm mt-1">Must be at least 1 passenger</p>}
                     </div>
 
                     {/* Return Toggle */}
@@ -262,8 +260,7 @@ const Home = () => {
                 {/* Buttons */}
                 <div className="flex justify-end space-x-4">
                     <button
-                        type="button"
-                        onClick={handleSearch}
+                        type="submit"
                         className="border px-6 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out cursor-pointer"
                     >
                         Search
@@ -275,6 +272,7 @@ const Home = () => {
                             setToStation(null);
                             setDate("");
                             setReturnDate("");
+                            setPassengers(1);
                             setErrors({});
                         }}
                         className="border px-6 py-2 rounded-md hover:bg-gray-100 transition duration-300 ease-in-out cursor-pointer"
