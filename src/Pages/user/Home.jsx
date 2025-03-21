@@ -566,9 +566,9 @@ const Home = () => {
                     </div>
                 )}
             </div>
-            <div className="max-w-[1390px] mx-auto p-1">
+            <div className="max-w-[1290px] mx-auto p-1">
                 {/* Heading */}
-                <h1 className="text-4xl ml-[-45px] mb-6 text-gray-900">History</h1>
+                <h1 className="text-4xl ml-[-85px] mb-6 text-gray-900">History</h1>
 
                 {/* Paragraphs */}
                 <p className="text-gray-700 text-lg text-justify leading-relaxed">
