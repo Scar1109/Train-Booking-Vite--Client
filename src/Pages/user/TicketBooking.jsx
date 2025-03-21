@@ -214,14 +214,14 @@ const TicketBooking = () => {
             </div>
 
             {/* Bottom Navigation */}
-            <div className="flex justify-between mt-6">
-                <button
+            <div className="flex justify-end mt-6">
+                {/* <button
                     onClick={goToPreviousStep}
                     className={`px-6 py-2 rounded-md border transition-all
                         ${currentStep === 2 ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-gray-100 hover:bg-gray-200"}`}
                 >
                     Previous
-                </button>
+                </button> */}
 
                 {currentStep < steps.length ? (
                     <button
