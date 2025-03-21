@@ -1,6 +1,7 @@
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./Pages/user/Home";
+
 import Login from "./Pages/auth/Login";
 import Gallery from "./Pages/user/Gallery";
 import Terms from "./Pages/user/Terms";
@@ -11,6 +12,7 @@ import AdminDashboard from "./Pages/admin/AdminDashboard";
 import ContactUs from "./Pages/user/ContactUs";
 import Register from "./Pages/auth/Signup";
 import AuthLayout from "./Pages/auth/AuthLayout";
+import TicketBooking from "./Pages/user/TicketBooking";
 
 function App() {
     return (
@@ -52,6 +54,7 @@ function App() {
                     <Route path="/share-ticket" element={<TicketShare />} />
                     <Route path="/user-profile" element={<UserProfile />} />
                     <Route path="/admin/*" element={<AdminDashboard />} />
+                    <Route path="/TicketBooking" element={<TicketBooking />} />
                 </Routes>
             </BrowserRouter>
         </div>
