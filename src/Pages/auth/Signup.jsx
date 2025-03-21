@@ -7,9 +7,9 @@ const Register = () => {
     return (
         <div className="register-page">
             <Link to="/" style={{ textDecoration: "none" }}>
-                <div className="logo">
+                {/* <div className="logo">
                     <img alt="logo" className="logo-img" src={Logo} />
-                </div>
+                </div> */}
             </Link>
             <div className="left-container">
                 <RegisterForm />
