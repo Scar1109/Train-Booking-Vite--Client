@@ -20,6 +20,7 @@ import {
 } from "@ant-design/icons";
 import axios from "axios";
 import dayjs from "dayjs";
+import AxiosInstance from "../../AxiosInstance";
 
 function TrainList() {
     const [trains, setTrains] = useState([]);
@@ -35,13 +36,11 @@ function TrainList() {
     const [sortOrder, setSortOrder] = useState("ascend");
     const [editingTrain, setEditingTrain] = useState(null);
 
-    const API_URL = "http://localhost:5050/api";
-
     const fetchTrains = async (page = 1, pageSize = 10) => {
         setLoading(true);
         try {
-            const response = await axios.get(
-                `${API_URL}/trains?page=${page}&limit=${pageSize}`
+            const response = await AxiosInstance.get(
+                `/api/trains?page=${page}&limit=${pageSize}`
             );
             if (response.data.success) {
                 setTrains(response.data.trains);

@@ -28,7 +28,7 @@ const LoginForm = () => {
                     });
                 } else {
                     localStorage.setItem("UserToken", token);
-                    navigate("/Home", {
+                    navigate("/", {
                         replace: true,
                         state: { loginSuccess: true },
                     });
