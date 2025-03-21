@@ -1,16 +1,18 @@
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./Pages/user/Home";
-import Login from "./Pages/auth/Login"
-import Signup from "./Pages/auth/Signup"
-import Gallery from "./Pages/user/Gallery"
-import Terms from "./Pages/user/Terms"
-import TrainsList from "./Pages/user/TrainsList"
-import TicketShare from "./Pages/user/TicketShare"
-import UserProfile from "./Pages/user/UserProfile"
-import AdminDashboard from "./Pages/admin/AdminDashboard"
-import ContactUs from "./Pages/user/ContactUs"
-import TicketBooking from "./Pages/user/TicketBooking"
+
+import Login from "./Pages/auth/Login";
+import Gallery from "./Pages/user/Gallery";
+import Terms from "./Pages/user/Terms";
+import TrainsList from "./Pages/user/TrainsList";
+import TicketShare from "./Pages/user/TicketShare";
+import UserProfile from "./Pages/user/UserProfile";
+import AdminDashboard from "./Pages/admin/AdminDashboard";
+import ContactUs from "./Pages/user/ContactUs";
+import Register from "./Pages/auth/Signup";
+import AuthLayout from "./Pages/auth/AuthLayout";
+import TicketBooking from "./Pages/user/TicketBooking";
 
 function App() {
     return (
@@ -18,8 +20,33 @@ function App() {
             <BrowserRouter basename="/">
                 <Routes>
                     <Route path="/" element={<Home />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<Signup />} />
+                    <Route
+                        path="/register"
+                        element={
+                            <div className="main-container">
+                                <div className="page-container">
+                                    <Register />
+                                </div>
+                                <div className="auth-layout">
+                                    <AuthLayout />
+                                </div>
+                            </div>
+                        }
+                    />
+
+                    <Route
+                        path="/login"
+                        element={
+                            <div className="main-container">
+                                <div className="page-container">
+                                    <Login />
+                                </div>
+                                <div className="auth-layout">
+                                    <AuthLayout />
+                                </div>
+                            </div>
+                        }
+                    />
                     <Route path="/contact-us" element={<ContactUs />} />
                     <Route path="/gallery" element={<Gallery />} />
                     <Route path="/terms" element={<Terms />} />
