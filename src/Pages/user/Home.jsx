@@ -421,9 +421,9 @@ const Home = () => {
             {/* <NavBar /> */}
 
             {/* Hero Section */}
-            <div className="relative w-full h-[879px] mx-auto">
+            <div className="relative w-full h-[80vh] md:h-[90vh] lg:h-screen">
                 {/* Carousel (Background) */}
-                <Carousel autoplay className="absolute top-0 left-0 min-h-[120vh] h-screen z-0">
+                <Carousel autoplay className="absolute top-0 left-0 w-full h-full">
                     {carouselImages.map((src, index) => (
                         <div key={index} className="w-full h-screen">
                             <img src={src} alt={`carousel-${index}`} className="w-full h-full object-cover" />
@@ -433,9 +433,9 @@ const Home = () => {
 
 
                 {/* Hero Content */}
-                <div className="absolute top-[35%] left-[50%] transform -translate-x-[120%] -translate-y-[50%] flex flex-col items-left text-left text-white z-20">
-                    <Icon icon="mdi:train" className="text-5xl mb-2" />
-                    <h2 className="text-5xl font- text-white drop-shadow-[2px_2px_4px_rgba(0,0,0,0.8)]">
+                <div className="absolute top-[30%] left-[50%] transform -translate-x-[120%] -translate-y- 0%] flex flex-col items-left text-left text-white z-10">
+                    <Icon icon="mdi:train" className="text-4xl mb-2" />
+                    <h2 className="text-4xl font- text-white drop-shadow-[2px_2px_4px_rgba(0,0,0,0.8)]">
                         Welcome to Sri Lanka Railways
                     </h2>
                     <p className="text-lg mt-2 opacity-90 text-white drop-shadow-[2px_2px_4px_rgba(0,0,0,0.8)]">
@@ -522,10 +522,10 @@ const Home = () => {
             </div>
             <div className="container mx-auto p-8">
                 {/* Heading */}
-                <h2 className="text-5xl ml-[-30px] mb-6">Gallery</h2>
+                <h2 className="text-4xl mb-6">Gallery</h2>
 
                 {/* Image Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                     {images.map((src, index) => (
                         <div
                             key={index}
@@ -566,9 +566,9 @@ const Home = () => {
                     </div>
                 )}
             </div>
-            <div className="max-w-[1490px] mx-auto p-1">
+            <div className="max-w-[1390px] mx-auto p-1">
                 {/* Heading */}
-                <h1 className="text-5xl ml-[-28px] mb-6 text-gray-900">History</h1>
+                <h1 className="text-4xl ml-[-45px] mb-6 text-gray-900">History</h1>
 
                 {/* Paragraphs */}
                 <p className="text-gray-700 text-lg text-justify leading-relaxed">
@@ -597,7 +597,7 @@ const Home = () => {
             </div>
             <div className="container mx-auto px-8 py-12">
                 {/* Title */}
-                <h2 className="text-5xl ml-[-28px] mb-8">Our Services</h2>
+                <h2 className="text-4xl mb-8">Our Services</h2>
 
                 {/* Grid Layout */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
