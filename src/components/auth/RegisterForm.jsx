@@ -8,7 +8,7 @@ const RegisterForm = () => {
     const onFinish = (values) => {
         const { firstName, lastName, email, password } = values;
 
-        AxiosInstance.post("/api/users/register", {
+        AxiosInstance.post("/api/auth/register", {
                 fName: firstName,
                 lName: lastName,
                 email,
