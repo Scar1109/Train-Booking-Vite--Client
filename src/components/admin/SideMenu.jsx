@@ -20,6 +20,7 @@ const items = [
     getItem("Users", "/admin/users", <Icon icon="carbon:user-avatar-filled" />),
     getItem("Tickets", "/admin/tickets", <Icon icon="carbon:ticket" />),
     getItem("Fraud Detection", "/admin/fraud-detection", <Icon icon="mdi:incognito" />),
+    getItem("Train List", "/admin/train-list", <Icon icon="material-symbols:train-outline" />),
     getItem("Settings", "/admin/settings", <Icon icon="carbon:settings" />),
 ];
 
