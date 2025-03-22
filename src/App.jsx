@@ -1,27 +1,21 @@
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./Pages/user/Home";
-import Login from "./Pages/auth/Login"
-import Gallery from "./Pages/user/Gallery"
-import Terms from "./Pages/user/Terms"
-import TrainsList from "./Pages/user/TrainsList"
-import TicketShare from "./Pages/user/TicketList"
-import AdminDashboard from "./Pages/admin/AdminDashboard"
-import ContactUs from "./Pages/user/ContactUs"
-import TransferTicket from "./Pages/user/TransferTicket"
-import TicketHistory from "./Pages/user/TicketHistory"
-import ReciveTicket from "./Pages/user/ReciveTicket"
-import ProfilePage from "./Pages/user/ProfilePage";
 import Login from "./Pages/auth/Login";
 import Gallery from "./Pages/user/Gallery";
 import Terms from "./Pages/user/Terms";
 import TrainsList from "./Pages/user/TrainsList";
-import TicketShare from "./Pages/user/TicketShare";
+import TicketShare from "./Pages/user/TicketList";
 import AdminDashboard from "./Pages/admin/AdminDashboard";
 import ContactUs from "./Pages/user/ContactUs";
 import Register from "./Pages/auth/Signup";
 import AuthLayout from "./Pages/auth/AuthLayout";
 import TicketBooking from "./Pages/user/TicketBooking";
+import TransferTicket from "./Pages/user/TransferTicket"
+import TicketHistory from "./Pages/user/TicketHistory"
+import ReciveTicket from "./Pages/user/ReciveTicket"
+import ProfilePage from "./Pages/user/ProfilePage";
+
 function App() {
     return (
         <div className="App">
