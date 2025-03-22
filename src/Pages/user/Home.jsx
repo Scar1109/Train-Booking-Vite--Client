@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+"use client";
+
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Select from "react-select";
-import { Carousel, Button, Switch, Card } from "antd";
+import { Carousel, Switch, Card } from "antd";
 import { Icon } from "@iconify/react";
-import Footer from "../../components/Footer";
 import NavBar from "../../components/NavBar";
 
 const Home = () => {
@@ -82,7 +83,6 @@ const Home = () => {
         "https://i.ibb.co/s945KHJ9/train-sri-lanka-stock-031425-c2ae7e79d84d424f98218e8ec8d232b3.jpg",
         "https://i.ibb.co/Q3cZ6CFw/photo-1566296314736-6eaac1ca0cb9.jpg",
     ];
-    
 
     const handleReturnChange = (checked) => {
         setIsReturn(checked);
@@ -133,126 +133,258 @@ const Home = () => {
             fromStation: false,
             toStation: false,
             date: false,
-            returnDate: false
+            returnDate: false,
         });
 
         // List of stations
         const stationOptions = [
-            "Ahangama", "Aluthgama", "Ambalangoda", "Ambewela", "Anuradhapura",
-            "Anuradhapura Town", "Awissawella", "Bandarawela", "Batticaloa", "Beliatta",
-            "Benthota", "Beruwala", "China bay", "Chunnakam", "Colombo Fort",
-            "Demodara", "Demodara R", "Diyathalawa", "Ella", "Ella R",
-            "Eraur", "Galgamuwa", "Galle", "Galoya", "Gampaha",
-            "Gampola", "Greatwestern", "Habaraduwa", "Habarana", "Hali Ela",
-            "Haputhale", "Hatton", "Hikkaduwa", "Hingurakgoda", "Idalgasinna",
-            "Jaffna", "Kakirawa", "Kaluthara South", "Kamburugamuwa", "Kandy",
-            "Kankesanthurai", "Kanthale", "Kilinochchi", "Kodikamam", "Koggala",
-            "Kurunegala", "Madhupara", "Mahawa", "Makumbura", "Mannar",
-            "Maradhana", "Mathale", "Mathara", "Medawachchiya", "Mirigama",
-            "Mirissa", "Moratuwa", "Mount Laviniya", "Nagollagama", "Nanu Oya",
-            "Nawalapitiya", "Nugegoda", "Ohiya", "Omantha", "Pallai",
-            "Panadura", "Pattipola", "Peradeniya", "Polgahawela", "Puwakpitiya",
-            "Ragama", "Rambukkana", "Rathmalana", "Return Colombo", "Return Waga",
-            "Talimannar Pier", "Thambakagamuwa", "Thamuththegama", "Thandikulam", "Trincomalee",
-            "Unawatuna", "Valachchena", "Vauniya", "Veyangoda", "Wadduwa",
-            "Waligama", "Welikanda", "Wellawa", "Wellawatte"
+            "Ahangama",
+            "Aluthgama",
+            "Ambalangoda",
+            "Ambewela",
+            "Anuradhapura",
+            "Anuradhapura Town",
+            "Awissawella",
+            "Bandarawela",
+            "Batticaloa",
+            "Beliatta",
+            "Benthota",
+            "Beruwala",
+            "China bay",
+            "Chunnakam",
+            "Colombo Fort",
+            "Demodara",
+            "Demodara R",
+            "Diyathalawa",
+            "Ella",
+            "Ella R",
+            "Eraur",
+            "Galgamuwa",
+            "Galle",
+            "Galoya",
+            "Gampaha",
+            "Gampola",
+            "Greatwestern",
+            "Habaraduwa",
+            "Habarana",
+            "Hali Ela",
+            "Haputhale",
+            "Hatton",
+            "Hikkaduwa",
+            "Hingurakgoda",
+            "Idalgasinna",
+            "Jaffna",
+            "Kakirawa",
+            "Kaluthara South",
+            "Kamburugamuwa",
+            "Kandy",
+            "Kankesanthurai",
+            "Kanthale",
+            "Kilinochchi",
+            "Kodikamam",
+            "Koggala",
+            "Kurunegala",
+            "Madhupara",
+            "Mahawa",
+            "Makumbura",
+            "Mannar",
+            "Maradhana",
+            "Mathale",
+            "Mathara",
+            "Medawachchiya",
+            "Mirigama",
+            "Mirissa",
+            "Moratuwa",
+            "Mount Laviniya",
+            "Nagollagama",
+            "Nanu Oya",
+            "Nawalapitiya",
+            "Nugegoda",
+            "Ohiya",
+            "Omantha",
+            "Pallai",
+            "Panadura",
+            "Pattipola",
+            "Peradeniya",
+            "Polgahawela",
+            "Puwakpitiya",
+            "Ragama",
+            "Rambukkana",
+            "Rathmalana",
+            "Return Colombo",
+            "Return Waga",
+            "Talimannar Pier",
+            "Thambakagamuwa",
+            "Thamuththegama",
+            "Thandikulam",
+            "Trincomalee",
+            "Unawatuna",
+            "Valachchena",
+            "Vauniya",
+            "Veyangoda",
+            "Wadduwa",
+            "Waligama",
+            "Welikanda",
+            "Wellawa",
+            "Wellawatte",
         ].map((station) => ({ value: station, label: station }));
 
         // Handle Form Submission with Validation
         const handleSearch = (e) => {
             e.preventDefault();
 
-            let newErrors = {
+            const newErrors = {
                 fromStation: !fromStation,
                 toStation: !toStation,
                 date: !date,
                 returnDate: isReturn && !returnDate,
-                passengers: passengers < 1
+                passengers: passengers < 1,
             };
 
             setErrors(newErrors);
-            
+
             // If no errors, navigate to TicketBooking page
             if (!Object.values(newErrors).includes(true)) {
-                console.log("Form submitted:", { fromStation, toStation, date, passengers, isReturn, returnDate });
+                console.log("Form submitted:", {
+                    fromStation,
+                    toStation,
+                    date,
+                    passengers,
+                    isReturn,
+                    returnDate,
+                });
                 navigate("/TicketBooking", { state: { startStep: 2 } }); // Navigate with state to start at step 2
             }
         };
 
         return (
             /* General Passenger Form */
-            <form className="mt-4 space-y-3 border border-gray-300 rounded-lg p-6" onSubmit={handleSearch}>
+            <form
+                className="mt-4 space-y-3 border border-gray-300 rounded-lg p-6"
+                onSubmit={handleSearch}
+            >
                 <div className="grid grid-cols-3 gap-4">
                     {/* From Station (Searchable) */}
                     <div>
-                        <label className="block text-gray-600 text-sm font-medium">From</label>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            From
+                        </label>
                         <Select
                             options={stationOptions}
                             value={fromStation}
-                            onChange={(selectedOption) => setFromStation(selectedOption)}
+                            onChange={(selectedOption) =>
+                                setFromStation(selectedOption)
+                            }
                             placeholder="Choose Station"
-                            className={`border rounded-md w-full ${errors.fromStation ? "border-red-500" : ""}`}
+                            className={`border rounded-md w-full ${
+                                errors.fromStation ? "border-red-500" : ""
+                            }`}
                         />
-                        {errors.fromStation && <p className="text-red-500 text-sm mt-1">Please select a station</p>}
+                        {errors.fromStation && (
+                            <p className="text-red-500 text-sm mt-1">
+                                Please select a station
+                            </p>
+                        )}
                     </div>
 
                     {/* To Station (Searchable) */}
                     <div>
-                        <label className="block text-gray-600 text-sm font-medium">To</label>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            To
+                        </label>
                         <Select
                             options={stationOptions}
                             value={toStation}
-                            onChange={(selectedOption) => setToStation(selectedOption)}
+                            onChange={(selectedOption) =>
+                                setToStation(selectedOption)
+                            }
                             placeholder="Choose Station"
-                            className={`border rounded-md w-full ${errors.toStation ? "border-red-500" : ""}`}
+                            className={`border rounded-md w-full ${
+                                errors.toStation ? "border-red-500" : ""
+                            }`}
                         />
-                        {errors.toStation && <p className="text-red-500 text-sm mt-1">Please select a station</p>}
+                        {errors.toStation && (
+                            <p className="text-red-500 text-sm mt-1">
+                                Please select a station
+                            </p>
+                        )}
                     </div>
 
                     {/* Date */}
                     <div>
-                        <label className="block text-gray-600 text-sm font-medium">Date</label>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Date
+                        </label>
                         <input
                             type="date"
-                            className={`border rounded-md px-4 py-2 w-full ${errors.date ? "border-red-500" : ""}`}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.date ? "border-red-500" : ""
+                            }`}
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
                         />
-                        {errors.date && <p className="text-red-500 text-sm mt-1">Please select a date</p>}
+                        {errors.date && (
+                            <p className="text-red-500 text-sm mt-1">
+                                Please select a date
+                            </p>
+                        )}
                     </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 items-center">
                     {/* No of Passengers */}
                     <div>
-                        <label className="block text-gray-600 text-sm font-medium">No of Passengers</label>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            No of Passengers
+                        </label>
                         <input
                             type="number"
                             min="1"
                             value={passengers}
-                            onChange={(e) => setPassengers(Number(e.target.value))}
-                            className={`border rounded-md px-4 py-2 w-full ${errors.passengers ? "border-red-500" : ""}`}
+                            onChange={(e) =>
+                                setPassengers(Number(e.target.value))
+                            }
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.passengers ? "border-red-500" : ""
+                            }`}
                         />
-                        {errors.passengers && <p className="text-red-500 text-sm mt-1">Must be at least 1 passenger</p>}
+                        {errors.passengers && (
+                            <p className="text-red-500 text-sm mt-1">
+                                Must be at least 1 passenger
+                            </p>
+                        )}
                     </div>
 
                     {/* Return Toggle */}
                     <div className="flex items-center space-x-3">
-                        <Switch checked={isReturn} onChange={() => setIsReturn(!isReturn)} />
-                        <span className="text-gray-700 font-medium">Return</span>
+                        <Switch
+                            checked={isReturn}
+                            onChange={() => setIsReturn(!isReturn)}
+                        />
+                        <span className="text-gray-700 font-medium">
+                            Return
+                        </span>
                     </div>
 
                     {/* Return Date Picker */}
                     {isReturn && (
                         <div>
-                            <label className="block text-gray-600 text-sm font-medium">Return Date</label>
+                            <label className="block text-gray-600 text-sm font-medium">
+                                Return Date
+                            </label>
                             <input
                                 type="date"
-                                className={`border rounded-md px-4 py-2 w-full ${errors.returnDate ? "border-red-500" : ""}`}
+                                className={`border rounded-md px-4 py-2 w-full ${
+                                    errors.returnDate ? "border-red-500" : ""
+                                }`}
                                 value={returnDate}
                                 onChange={(e) => setReturnDate(e.target.value)}
                             />
-                            {errors.returnDate && <p className="text-red-500 text-sm mt-1">Please select a return date</p>}
+                            {errors.returnDate && (
+                                <p className="text-red-500 text-sm mt-1">
+                                    Please select a return date
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>
@@ -284,137 +416,608 @@ const Home = () => {
         );
     };
 
-    /* Warrant Passenger Form */
-    const WarrantPassengerForm = () => (
-        <div className="border border-gray-300 rounded-lg p-6 space-y-6">
-            {/* Warrant Information Section */}
-            <h2 className="text-lg font-bold text-gray-700 border-b pb-2">Warrant Information</h2>
-            <div className="grid grid-cols-3 gap-4">
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">Warrant Number <span className="text-blue-500">?</span></label>
-                    <input type="text" className="border rounded-md px-4 py-2 w-full" placeholder="Warrant Number" />
+    // Convert WarrantPassengerForm to a stateful component with validation
+    const WarrantPassengerForm = () => {
+        const [formData, setFormData] = useState({
+            warrantNumber: "",
+            departmentCode: "",
+            classType: "",
+            warrantIssuingDate: "",
+            proposedTravelDate: "",
+            nic: "",
+            title: "Mr.",
+            firstName: "",
+            lastName: "",
+            gender: "",
+            mobileNumber: "",
+            fromStation: "",
+            toStation: "",
+            date: "",
+            passengers: 1,
+        });
+
+        const [errors, setErrors] = useState({});
+        const navigate = useNavigate();
+
+        const handleChange = (e) => {
+            const { name, value } = e.target;
+            setFormData({
+                ...formData,
+                [name]: value,
+            });
+        };
+
+        const validateForm = () => {
+            const newErrors = {};
+
+            // Required fields validation
+            if (!formData.warrantNumber)
+                newErrors.warrantNumber = "Warrant number is required";
+            if (!formData.departmentCode)
+                newErrors.departmentCode = "Department code is required";
+            if (!formData.classType || formData.classType === "Class Type")
+                newErrors.classType = "Please select a class type";
+            if (!formData.warrantIssuingDate)
+                newErrors.warrantIssuingDate =
+                    "Warrant issuing date is required";
+            if (!formData.proposedTravelDate)
+                newErrors.proposedTravelDate =
+                    "Proposed travel date is required";
+            if (!formData.nic) newErrors.nic = "NIC is required";
+            if (!formData.firstName)
+                newErrors.firstName = "First name is required";
+            if (!formData.lastName)
+                newErrors.lastName = "Last name is required";
+            if (!formData.gender || formData.gender === "Gender")
+                newErrors.gender = "Please select gender";
+
+            // Mobile number validation (Sri Lankan format)
+            if (!formData.mobileNumber) {
+                newErrors.mobileNumber = "Mobile number is required";
+            } else if (
+                !/^07\d{8}$/.test(formData.mobileNumber.replace(/\s/g, ""))
+            ) {
+                newErrors.mobileNumber = "Invalid mobile number format";
+            }
+
+            // Journey information validation
+            if (
+                !formData.fromStation ||
+                formData.fromStation === "Choose Station"
+            )
+                newErrors.fromStation = "Please select departure station";
+            if (!formData.toStation || formData.toStation === "Choose Station")
+                newErrors.toStation = "Please select arrival station";
+            if (!formData.date) newErrors.date = "Date is required";
+            if (formData.passengers < 1)
+                newErrors.passengers = "Must be at least 1 passenger";
+
+            // Date validation
+            if (
+                formData.proposedTravelDate &&
+                formData.date &&
+                formData.proposedTravelDate !== formData.date
+            ) {
+                newErrors.date = "Travel date must match proposed travel date";
+            }
+
+            return newErrors;
+        };
+
+        const handleVerify = (e) => {
+            e.preventDefault();
+
+            const validationErrors = validateForm();
+            setErrors(validationErrors);
+
+            if (Object.keys(validationErrors).length === 0) {
+                // Verification logic would go here
+                console.log("Warrant verification successful", formData);
+            }
+        };
+
+        const handleSearch = (e) => {
+            e.preventDefault();
+
+            const validationErrors = validateForm();
+            setErrors(validationErrors);
+
+            if (Object.keys(validationErrors).length === 0) {
+                console.log("Warrant form submitted:", formData);
+                navigate("/TicketBooking", { state: { startStep: 2 } });
+            }
+        };
+
+        const handleReset = () => {
+            setFormData({
+                warrantNumber: "",
+                departmentCode: "",
+                classType: "",
+                warrantIssuingDate: "",
+                proposedTravelDate: "",
+                nic: "",
+                title: "Mr.",
+                firstName: "",
+                lastName: "",
+                gender: "",
+                mobileNumber: "",
+                fromStation: "",
+                toStation: "",
+                date: "",
+                passengers: 1,
+            });
+            setErrors({});
+        };
+
+        return (
+            <div className="border border-gray-300 rounded-lg p-6 space-y-6">
+                {/* Warrant Information Section */}
+                <h2 className="text-lg font-bold text-gray-700 border-b pb-2">
+                    Warrant Information
+                </h2>
+                <div className="grid grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Warrant Number{" "}
+                            <span className="text-blue-500">?</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="warrantNumber"
+                            value={formData.warrantNumber}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.warrantNumber ? "border-red-500" : ""
+                            }`}
+                            placeholder="Warrant Number"
+                        />
+                        {errors.warrantNumber && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.warrantNumber}
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Department Code{" "}
+                            <span className="text-blue-500">?</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="departmentCode"
+                            value={formData.departmentCode}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.departmentCode ? "border-red-500" : ""
+                            }`}
+                            placeholder="Department Code"
+                        />
+                        {errors.departmentCode && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.departmentCode}
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Class Type <span className="text-blue-500">?</span>
+                        </label>
+                        <select
+                            name="classType"
+                            value={formData.classType}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.classType ? "border-red-500" : ""
+                            }`}
+                        >
+                            <option>Class Type</option>
+                            <option value="1st">1st Class</option>
+                            <option value="2nd">2nd Class</option>
+                            <option value="3rd">3rd Class</option>
+                        </select>
+                        {errors.classType && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.classType}
+                            </p>
+                        )}
+                    </div>
                 </div>
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">Department Code <span className="text-blue-500">?</span></label>
-                    <input type="text" className="border rounded-md px-4 py-2 w-full" placeholder="Department Code" />
+
+                <div className="grid grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Warrant Issuing Date{" "}
+                            <span className="text-blue-500">?</span>
+                        </label>
+                        <input
+                            type="date"
+                            name="warrantIssuingDate"
+                            value={formData.warrantIssuingDate}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.warrantIssuingDate
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
+                        />
+                        {errors.warrantIssuingDate && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.warrantIssuingDate}
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Proposed Travel Date{" "}
+                            <span className="text-blue-500">?</span>
+                        </label>
+                        <input
+                            type="date"
+                            name="proposedTravelDate"
+                            value={formData.proposedTravelDate}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.proposedTravelDate
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
+                        />
+                        {errors.proposedTravelDate && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.proposedTravelDate}
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            NIC of the Warrant Holder{" "}
+                            <span className="text-blue-500">?</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="nic"
+                            value={formData.nic}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.nic ? "border-red-500" : ""
+                            }`}
+                            placeholder="NIC"
+                        />
+                        {errors.nic && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.nic}
+                            </p>
+                        )}
+                    </div>
                 </div>
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">Class Type <span className="text-blue-500">?</span></label>
-                    <select className="border rounded-md px-4 py-2 w-full">
-                        <option>Class Type</option>
-                    </select>
+
+                <div className="grid grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Title
+                        </label>
+                        <select
+                            name="title"
+                            value={formData.title}
+                            onChange={handleChange}
+                            className="border rounded-md px-4 py-2 w-full"
+                        >
+                            <option value="Mr.">Mr.</option>
+                            <option value="Mrs.">Mrs.</option>
+                            <option value="Ms.">Ms.</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            First Name
+                        </label>
+                        <input
+                            type="text"
+                            name="firstName"
+                            value={formData.firstName}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.firstName ? "border-red-500" : ""
+                            }`}
+                            placeholder="First Name"
+                        />
+                        {errors.firstName && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.firstName}
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Last Name
+                        </label>
+                        <input
+                            type="text"
+                            name="lastName"
+                            value={formData.lastName}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.lastName ? "border-red-500" : ""
+                            }`}
+                            placeholder="Last Name"
+                        />
+                        {errors.lastName && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.lastName}
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 items-center">
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Gender
+                        </label>
+                        <select
+                            name="gender"
+                            value={formData.gender}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.gender ? "border-red-500" : ""
+                            }`}
+                        >
+                            <option>Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                        {errors.gender && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.gender}
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Mobile Number{" "}
+                            <span className="text-blue-500">?</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="mobileNumber"
+                            value={formData.mobileNumber}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.mobileNumber ? "border-red-500" : ""
+                            }`}
+                            placeholder="ex: 07x xxx xxxx"
+                        />
+                        {errors.mobileNumber && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.mobileNumber}
+                            </p>
+                        )}
+                    </div>
+                    <div className="flex items-end justify mt-5">
+                        <button
+                            onClick={handleVerify}
+                            className="border px-6 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out cursor-pointer"
+                        >
+                            Verify
+                        </button>
+                    </div>
+                </div>
+
+                {/* Journey Information Section */}
+                <h2 className="text-lg font-bold text-gray-700 border-b pb-2">
+                    Journey Information
+                </h2>
+                <div className="grid grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            From
+                        </label>
+                        <select
+                            name="fromStation"
+                            value={formData.fromStation}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.fromStation ? "border-red-500" : ""
+                            }`}
+                        >
+                            <option>Choose Station</option>
+                            <option value="Colombo Fort">Colombo Fort</option>
+                            <option value="Kandy">Kandy</option>
+                            <option value="Galle">Galle</option>
+                            <option value="Anuradhapura">Anuradhapura</option>
+                            <option value="Jaffna">Jaffna</option>
+                        </select>
+                        {errors.fromStation && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.fromStation}
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            To
+                        </label>
+                        <select
+                            name="toStation"
+                            value={formData.toStation}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.toStation ? "border-red-500" : ""
+                            }`}
+                        >
+                            <option>Choose Station</option>
+                            <option value="Colombo Fort">Colombo Fort</option>
+                            <option value="Kandy">Kandy</option>
+                            <option value="Galle">Galle</option>
+                            <option value="Anuradhapura">Anuradhapura</option>
+                            <option value="Jaffna">Jaffna</option>
+                        </select>
+                        {errors.toStation && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.toStation}
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            Date
+                        </label>
+                        <input
+                            type="date"
+                            name="date"
+                            value={formData.date}
+                            onChange={handleChange}
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.date ? "border-red-500" : ""
+                            }`}
+                        />
+                        {errors.date && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.date}
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-gray-600 text-sm font-medium">
+                            No of Passengers
+                        </label>
+                        <input
+                            type="number"
+                            name="passengers"
+                            value={formData.passengers}
+                            onChange={handleChange}
+                            min="1"
+                            className={`border rounded-md px-4 py-2 w-full ${
+                                errors.passengers ? "border-red-500" : ""
+                            }`}
+                            placeholder="No of Passengers"
+                        />
+                        {errors.passengers && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.passengers}
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex justify-end space-x-4 mt-4">
+                    <button
+                        onClick={handleSearch}
+                        className="border px-6 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out cursor-pointer"
+                    >
+                        Search
+                    </button>
+                    <button
+                        onClick={handleReset}
+                        className="border px-6 py-2 rounded-md hover:bg-gray-100 transition duration-300 ease-in-out cursor-pointer"
+                    >
+                        Reset
+                    </button>
                 </div>
             </div>
+        );
+    };
 
-            <div className="grid grid-cols-3 gap-4">
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">Warrant Issuing Date <span className="text-blue-500">?</span></label>
-                    <input type="date" className="border rounded-md px-4 py-2 w-full" />
-                </div>
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">Proposed Travel Date <span className="text-blue-500">?</span></label>
-                    <input type="date" className="border rounded-md px-4 py-2 w-full" />
-                </div>
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">NIC of the Warrant Holder <span className="text-blue-500">?</span></label>
-                    <input type="text" className="border rounded-md px-4 py-2 w-full" placeholder="NIC" />
-                </div>
-            </div>
+    /* Pension Warrant Passenger Form */
+    const PensionPassengerForm = () => {
+        const [formData, setFormData] = useState({
+            pensionerTripId: "",
+            nicNumber: "",
+        });
 
-            <div className="grid grid-cols-3 gap-4">
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">Title</label>
-                    <select className="border rounded-md px-4 py-2 w-full">
-                        <option>Mr.</option>
-                        <option>Mrs.</option>
-                        <option>Ms.</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">First Name</label>
-                    <input type="text" className="border rounded-md px-4 py-2 w-full" placeholder="First Name" />
-                </div>
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">Last Name</label>
-                    <input type="text" className="border rounded-md px-4 py-2 w-full" placeholder="Last Name" />
-                </div>
-            </div>
+        const [errors, setErrors] = useState({});
+        const navigate = useNavigate();
 
-            <div className="grid grid-cols-3 gap-4 items-center">
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">Gender</label>
-                    <select className="border rounded-md px-4 py-2 w-full">
-                        <option>Gender</option>
-                        <option>Male</option>
-                        <option>Female</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">Mobile Number <span className="text-blue-500">?</span></label>
-                    <input type="text" className="border rounded-md px-4 py-2 w-full" placeholder="ex: 07x xxx xxxx" />
-                </div>
-                <div className="flex items-end justify mt-5">
-                    <button className="border px-6 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out cursor-pointer">
+        const handleChange = (e) => {
+            const { name, value } = e.target;
+            setFormData({
+                ...formData,
+                [name]: value,
+            });
+        };
+
+        const validateForm = () => {
+            const newErrors = {};
+
+            if (!formData.pensionerTripId)
+                newErrors.pensionerTripId = "Pensioner Trip ID is required";
+
+            // NIC validation (Sri Lankan format)
+            if (!formData.nicNumber) {
+                newErrors.nicNumber = "NIC Number is required";
+            } else if (!/^\d{9}[vVxX]$|^\d{12}$/.test(formData.nicNumber)) {
+                newErrors.nicNumber = "Invalid NIC format";
+            }
+
+            return newErrors;
+        };
+
+        const handleVerify = (e) => {
+            e.preventDefault();
+
+            const validationErrors = validateForm();
+            setErrors(validationErrors);
+
+            if (Object.keys(validationErrors).length === 0) {
+                console.log("Pension verification successful", formData);
+                // Verification logic would go here
+            }
+        };
+
+        return (
+            <div className="space-y-3 border border-gray-300 rounded-lg p-6 h-50">
+                <h2 className="text-lg font-bold">
+                    Pension Warrant Information
+                </h2>
+                <div className="grid grid-cols-3 gap-55">
+                    <div>
+                        <input
+                            type="text"
+                            name="pensionerTripId"
+                            value={formData.pensionerTripId}
+                            onChange={handleChange}
+                            placeholder="Pensioner Trip ID"
+                            className={`border rounded-md px-4 py-2 w-79 ${
+                                errors.pensionerTripId ? "border-red-500" : ""
+                            }`}
+                        />
+                        {errors.pensionerTripId && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.pensionerTripId}
+                            </p>
+                        )}
+                    </div>
+                    <div>
+                        <input
+                            type="text"
+                            name="nicNumber"
+                            value={formData.nicNumber}
+                            onChange={handleChange}
+                            placeholder="NIC Number"
+                            className={`border rounded-md px-4 py-2 w-79 ${
+                                errors.nicNumber ? "border-red-500" : ""
+                            }`}
+                        />
+                        {errors.nicNumber && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.nicNumber}
+                            </p>
+                        )}
+                    </div>
+                    <button
+                        onClick={handleVerify}
+                        className="w-30 border px-6 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out cursor-pointer"
+                    >
                         Verify
                     </button>
                 </div>
             </div>
-
-            {/* Journey Information Section */}
-            <h2 className="text-lg font-bold text-gray-700 border-b pb-2">Journey Information</h2>
-            <div className="grid grid-cols-3 gap-4">
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">From</label>
-                    <select className="border rounded-md px-4 py-2 w-full">
-                        <option>Choose Station</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">To</label>
-                    <select className="border rounded-md px-4 py-2 w-full">
-                        <option>Choose Station</option>
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">Date</label>
-                    <input type="date" className="border rounded-md px-4 py-2 w-full" />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-                <div>
-                    <label className="block text-gray-600 text-sm font-medium">No of Passengers</label>
-                    <input type="number" className="border rounded-md px-4 py-2 w-full" placeholder="No of Passengers" />
-                </div>
-            </div>
-
-            {/* Buttons */}
-            <div className="flex justify-end space-x-4 mt-4">
-                <button className="border px-6 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out cursor-pointer">
-                    Search
-                </button>
-                <button className="border px-6 py-2 rounded-md hover:bg-gray-100 transition duration-300 ease-in-out cursor-pointer">
-                    Reset
-                </button>
-            </div>
-        </div>
-    );
-
-
-
-    /* Pension Warrant Passenger Form */
-    const PensionPassengerForm = () => (
-        <div className="space-y-3 border border-gray-300 rounded-lg p-6 h-50">
-            <h2 className="text-lg font-bold">Pension Warrant Information</h2>
-            <div className="grid grid-cols-3 gap-55">
-                <input type="text" placeholder="Pensioner Trip ID" className=" border rounded-md px-4 py-2 w-79" />
-                <input type="text" placeholder="NIC Number" className="border rounded-md px-4 py-2 w-79" />
-                <button className="w-30 border px-6 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition duration-300 ease-in-out cursor-pointer">
-                    Verify
-                </button>
-            </div>
-        </div>
-    );
+        );
+    };
     return (
         <div className="bg-white min-h-screen">
             {/* Header Section */}
@@ -423,14 +1026,20 @@ const Home = () => {
             {/* Hero Section */}
             <div className="relative w-full h-[80vh] md:h-[90vh] lg:h-screen">
                 {/* Carousel (Background) */}
-                <Carousel autoplay className="absolute top-0 left-0 w-full h-full">
+                <Carousel
+                    autoplay
+                    className="absolute top-0 left-0 w-full h-full"
+                >
                     {carouselImages.map((src, index) => (
                         <div key={index} className="w-full h-screen">
-                            <img src={src} alt={`carousel-${index}`} className="w-full h-full object-cover" />
+                            <img
+                                src={src || "/placeholder.svg"}
+                                alt={`carousel-${index}`}
+                                className="w-full h-full object-cover"
+                            />
                         </div>
                     ))}
                 </Carousel>
-
 
                 {/* Hero Content */}
                 <div className="absolute top-[30%] left-[50%] transform -translate-x-[120%] -translate-y- 0%] flex flex-col items-left text-left text-white z-10">
@@ -454,30 +1063,38 @@ const Home = () => {
                 <div className="w-full max-w-[1140px] bg-white p-0 shadow-lg  flex mb-10 mt-[-20px]">
                     {/* Left Section (Blue Background) */}
                     <div
-                        className={`w-[285px] transition-all duration-300 ${activeTab === "general"
-                            ? "h-[385px]"
-                            : activeTab === "warrant"
-                                ? "h-[830px]"
+                        className={`w-[285px] transition-all duration-300 ${
+                            activeTab === "general"
+                                ? "h-[385px]"
+                                : activeTab === "warrant"
+                                ? "h-[960px]"
                                 : "h-[580px]"
-                            } bg-gradient-to-b from-blue-700 to-blue-400 text-white flex flex-col p-5`}
+                        } bg-gradient-to-b from-blue-700 to-blue-400 text-white flex flex-col p-5`}
                     >
                         <h2 className="text-3xl mt-5">Book Your Seat</h2>
-                        <p className="mt-2 opacity-80">You can book both ways</p>
+                        <p className="mt-2 opacity-80">
+                            You can book both ways
+                        </p>
 
                         {/* Show "Government Circulars" when not General Passenger */}
                         {activeTab !== "general" && (
                             <div className="mt-4 p-4 border border-white rounded-lg">
-                                <h3 className="text-lg font-semibold">Government Circulars</h3>
+                                <h3 className="text-lg font-semibold">
+                                    Government Circulars
+                                </h3>
                                 <ul className="mt-2 space-y-7 text-sm ">
                                     <li>Establishment Code Chapter XIII</li>
                                     <li>Establishment Code Chapter XVI</li>
-                                    <li>Establishment Code Chapter XVI —
-                                        Amendments to the paragraph 2
-                                        of the circular number 26/201
-                                        issued by the Public
-                                        Administration.</li>
-                                    <li>Terms and Conditions for Users —
-                                        Will attach in PDE</li>
+                                    <li>
+                                        Establishment Code Chapter XVI —
+                                        Amendments to the paragraph 2 of the
+                                        circular number 26/201 issued by the
+                                        Public Administration.
+                                    </li>
+                                    <li>
+                                        Terms and Conditions for Users — Will
+                                        attach in PDE
+                                    </li>
                                     <li>Guidelines</li>
                                 </ul>
                             </div>
@@ -486,36 +1103,45 @@ const Home = () => {
 
                     {/* Right Section (White Background) */}
                     <div
-                        className={`w-[855px] transition-all duration-300 ${activeTab === "general"
-                            ? "h-[385px]"
-                            : activeTab === "warrant"
+                        className={`w-[855px] transition-all duration-300 ${
+                            activeTab === "general"
+                                ? "h-[385px]"
+                                : activeTab === "warrant"
                                 ? "h-[830px]"
                                 : "h-[580px]"
-                            } bg-white p-6 rounded-r-lg `}
+                        } bg-white p-6 rounded-r-lg `}
                     >
                         {/* Tabs */}
                         <div className="flex  space-x-2">
                             {["general", "warrant", "pension"].map((tab) => (
                                 <button
                                     key={tab}
-                                    className={`px-6 py-2 font-medium rounded-t-md transition-all duration-300 ease-in-out ${activeTab === tab
-                                        ? "bg-gradient-to-r from-blue-600 to-blue-400 text-white shadow-md"
-                                        : "bg-gray-300 text-gray-700"
-                                        }`}
+                                    className={`px-6 py-2 font-medium rounded-t-md transition-all duration-300 ease-in-out ${
+                                        activeTab === tab
+                                            ? "bg-gradient-to-r from-blue-600 to-blue-400 text-white shadow-md"
+                                            : "bg-gray-300 text-gray-700"
+                                    }`}
                                     onClick={() => setActiveTab(tab)}
                                 >
                                     {tab === "general" && "General Passenger"}
                                     {tab === "warrant" && "Warrant Passenger"}
-                                    {tab === "pension" && "Pension Warrant Passenger"}
+                                    {tab === "pension" &&
+                                        "Pension Warrant Passenger"}
                                 </button>
                             ))}
                         </div>
 
                         {/* Form Content (Changes Based on Active Tab) */}
                         <div className="mt-4">
-                            {activeTab === "general" && <GeneralPassengerForm />}
-                            {activeTab === "warrant" && <WarrantPassengerForm />}
-                            {activeTab === "pension" && <PensionPassengerForm />}
+                            {activeTab === "general" && (
+                                <GeneralPassengerForm />
+                            )}
+                            {activeTab === "warrant" && (
+                                <WarrantPassengerForm />
+                            )}
+                            {activeTab === "pension" && (
+                                <PensionPassengerForm />
+                            )}
                         </div>
                     </div>
                 </div>
@@ -532,7 +1158,11 @@ const Home = () => {
                             className="rounded-lg shadow-2xl overflow-hidden cursor-pointer hover:shadow-lg transition duration-300"
                             onClick={() => openLightbox(index)}
                         >
-                            <img src={src} alt={`Gallery ${index + 1}`} className="w-full h-60 object-cover" />
+                            <img
+                                src={src || "/placeholder.svg"}
+                                alt={`Gallery ${index + 1}`}
+                                className="w-full h-60 object-cover"
+                            />
                         </div>
                     ))}
                 </div>
@@ -541,7 +1171,10 @@ const Home = () => {
                 {selectedImage && (
                     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
                         {/* Close Button */}
-                        <button onClick={closeLightbox} className="absolute top-5 right-5 text-white text-3xl">
+                        <button
+                            onClick={closeLightbox}
+                            className="absolute top-5 right-5 text-white text-3xl"
+                        >
                             &times;
                         </button>
 
@@ -554,7 +1187,11 @@ const Home = () => {
                         </button>
 
                         {/* Image Display */}
-                        <img src={selectedImage} alt="Lightbox" className="max-w-[90%] max-h-[80vh] object-contain" />
+                        <img
+                            src={selectedImage || "/placeholder.svg"}
+                            alt="Lightbox"
+                            className="max-w-[90%] max-h-[80vh] object-contain"
+                        />
 
                         {/* Right Navigation */}
                         <button
@@ -572,27 +1209,71 @@ const Home = () => {
 
                 {/* Paragraphs */}
                 <p className="text-gray-700 text-lg text-justify leading-relaxed">
-                    Rail was introduced in Sri Lanka in 1864 to transport coffee from plantations in the hill country district of Kandy to the port city of Colombo on its way to Europe and the world market. The coffee blight of 1871 destroyed many a fine plantation and tea replaced coffee. With the development of tea plantations in the 1880s, the joint-stock companies swallowed up the former individual proprietorship of the coffee era. Under corporate ownership and management control by companies, the process of production of tea became more sophisticated and needed more and more railways built to the Kandyan highlands. To send tea to Colombo and to transport labour, machinery, manure, rice, and foodstuff, etc to Kandy, another 100 miles of railways were constructed in the tea planting districts to serve the expanding tea domain.
+                    Rail was introduced in Sri Lanka in 1864 to transport coffee
+                    from plantations in the hill country district of Kandy to
+                    the port city of Colombo on its way to Europe and the world
+                    market. The coffee blight of 1871 destroyed many a fine
+                    plantation and tea replaced coffee. With the development of
+                    tea plantations in the 1880s, the joint-stock companies
+                    swallowed up the former individual proprietorship of the
+                    coffee era. Under corporate ownership and management control
+                    by companies, the process of production of tea became more
+                    sophisticated and needed more and more railways built to the
+                    Kandyan highlands. To send tea to Colombo and to transport
+                    labour, machinery, manure, rice, and foodstuff, etc to
+                    Kandy, another 100 miles of railways were constructed in the
+                    tea planting districts to serve the expanding tea domain.
                 </p>
 
                 <p className="text-gray-700 text-justify leading-relaxed mt-4">
-                    To serve the coconut plantations flourishing in the west, southwest and northwest coastal areas of the country, and the wet inland rubber plantations below the tea belt, railway lines were built in the wake of these agricultural developments. Thereafter, the need for cheap and safe travel in order to open up the hinterland of the country led to the expansion of the railway.
+                    To serve the coconut plantations flourishing in the west,
+                    southwest and northwest coastal areas of the country, and
+                    the wet inland rubber plantations below the tea belt,
+                    railway lines were built in the wake of these agricultural
+                    developments. Thereafter, the need for cheap and safe travel
+                    in order to open up the hinterland of the country led to the
+                    expansion of the railway.
                 </p>
 
                 <p className="text-gray-700 text-lg  text-justify leading-relaxed mt-4">
-                    An extension of the Main Line to Kandy was made north to the ancient city of Anuradhapura, going further north to Kankesanturai and west to Talaimannar to connect the island with South India by ferry, to bring Indian labour for the tea and rubber plantations, and also import rice and other foodstuffs not indigenously produced in sufficient quantities.
+                    An extension of the Main Line to Kandy was made north to the
+                    ancient city of Anuradhapura, going further north to
+                    Kankesanturai and west to Talaimannar to connect the island
+                    with South India by ferry, to bring Indian labour for the
+                    tea and rubber plantations, and also import rice and other
+                    foodstuffs not indigenously produced in sufficient
+                    quantities.
                 </p>
 
                 <p className="text-gray-700 text-lg  text-justify leading-relaxed mt-4">
-                    Towards the east, there was little economic justification to lay a line to the dry zone in that direction, but it became strategically worthwhile to lay a line to the natural harbour of Trincomalee and also connect it to the provincial capital of Batticaloa. These lines were laid with light (21 kg) section rails, as was the narrow gauge section to serve the rubber plantations east of Colombo, known as the Kelani Valley Line.
+                    Towards the east, there was little economic justification to
+                    lay a line to the dry zone in that direction, but it became
+                    strategically worthwhile to lay a line to the natural
+                    harbour of Trincomalee and also connect it to the provincial
+                    capital of Batticaloa. These lines were laid with light (21
+                    kg) section rails, as was the narrow gauge section to serve
+                    the rubber plantations east of Colombo, known as the Kelani
+                    Valley Line.
                 </p>
 
                 <p className="text-gray-700 text-lg  text-justify leading-relaxed mt-4">
-                    Up country, a similar branch line was laid from Nanu Oya on the Main Line through very difficult terrain to serve the tea plantations around Nuwara Eliya. Track alignment was defined in this section about 140 years ago, when economic considerations were vastly different. The railways achieved modal superiority with speeds of 25 to 40 kmph in the hill country and 65 to 80 in the low country. Civil engineering criteria was influenced by the economic need to minimize cuts and fills, permitting gradients to 2 to 3% and minimizing bridge lengths. As a result, the alignment here is winding with very sharp curves.
+                    Up country, a similar branch line was laid from Nanu Oya on
+                    the Main Line through very difficult terrain to serve the
+                    tea plantations around Nuwara Eliya. Track alignment was
+                    defined in this section about 140 years ago, when economic
+                    considerations were vastly different. The railways achieved
+                    modal superiority with speeds of 25 to 40 kmph in the hill
+                    country and 65 to 80 in the low country. Civil engineering
+                    criteria was influenced by the economic need to minimize
+                    cuts and fills, permitting gradients to 2 to 3% and
+                    minimizing bridge lengths. As a result, the alignment here
+                    is winding with very sharp curves.
                 </p>
 
                 <p className="text-gray-700 text-lg text-justify leading-relaxed mt-4 italic">
-                    'In the early days of the railways, the bulk of the freight was carried to the port of Colombo and as the port expanded, rail lines were laid to serve every pier.'
+                    'In the early days of the railways, the bulk of the freight
+                    was carried to the port of Colombo and as the port expanded,
+                    rail lines were laid to serve every pier.'
                 </p>
             </div>
             <div className="container mx-auto px-8 py-12">
@@ -608,14 +1289,20 @@ const Home = () => {
                             bordered={true}
                         >
                             {/* Title */}
-                            <h3 className="font-bold text-lg">{service.title}</h3>
+                            <h3 className="font-bold text-lg">
+                                {service.title}
+                            </h3>
 
                             {/* Description */}
-                            <p className="text-sm opacity-80 mt-1">{service.description}</p>
+                            <p className="text-sm opacity-80 mt-1">
+                                {service.description}
+                            </p>
 
                             {/* Available Class Types */}
                             <p className="mt-2 text-sm">
-                                <span className="font-semibold">Available class types:</span>{" "}
+                                <span className="font-semibold">
+                                    Available class types:
+                                </span>{" "}
                                 <span className="text-blue-600 font-semibold italic">
                                     {service.classTypes}
                                 </span>
