@@ -12,12 +12,12 @@ import {
     Select,
     Space,
 } from "antd";
-import {
-    EditOutlined,
-    StopOutlined,
-    CheckOutlined,
-} from "@ant-design/icons";
+import { EditOutlined, StopOutlined, CheckOutlined } from "@ant-design/icons";
 import AxiosInstance from "../../AxiosInstance";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import { DatePicker } from "antd";
+dayjs.extend(customParseFormat);
 
 function Tickets() {
     const [tickets, setTickets] = useState([]);
@@ -44,7 +44,10 @@ function Tickets() {
 
     const showEditModal = (ticket) => {
         setEditingTicket(ticket);
-        form.setFieldsValue(ticket);
+        form.setFieldsValue({
+            ...ticket,
+            newBookingDateTime: dayjs(ticket.bookingTime),
+        });
         setIsModalVisible(true);
     };
 
@@ -56,7 +59,17 @@ function Tickets() {
     const handleModalSave = async () => {
         try {
             const values = await form.validateFields();
-            const response = await AxiosInstance.put(`/api/bookings/update/${editingTicket._id}`, values);
+            const newTime = values.newBookingDateTime?.toISOString();
+
+            const response = await AxiosInstance.put(
+                `/api/bookings/update/${editingTicket._id}`,
+                {
+                    numTickets: values.numTickets,
+                    price: values.price,
+                    bookingTime: newTime, // Send new booking time
+                }
+            );
+
             if (response.data.success) {
                 message.success("Ticket updated successfully.");
                 fetchTickets();
@@ -70,7 +83,9 @@ function Tickets() {
 
     const handleCancelTicket = async (id) => {
         try {
-            const response = await AxiosInstance.patch(`/api/bookings/cancel/${id}`);
+            const response = await AxiosInstance.patch(
+                `/api/bookings/cancel/${id}`
+            );
             if (response.data.success) {
                 message.success("Ticket cancelled.");
                 fetchTickets();
@@ -112,7 +127,7 @@ function Tickets() {
             title: "Booking Time",
             dataIndex: "bookingTime",
             key: "bookingTime",
-            render: (text) => text ? new Date(text).toLocaleString() : "N/A",
+            render: (text) => (text ? new Date(text).toLocaleString() : "N/A"),
         },
         {
             title: "Suspicious",
@@ -190,27 +205,81 @@ function Tickets() {
                     <Form.Item
                         label="Number of Tickets"
                         name="numTickets"
-                        rules={[{ required: true, message: "Required" }]}
+                        rules={[
+                            {
+                                required: true,
+                                message: "Please enter ticket count",
+                            },
+                            {
+                                validator: (_, value) =>
+                                    value > 0
+                                        ? Promise.resolve()
+                                        : Promise.reject(
+                                              new Error(
+                                                  "Ticket count must be greater than 0"
+                                              )
+                                          ),
+                            },
+                        ]}
                     >
                         <InputNumber min={1} className="w-full" />
                     </Form.Item>
                     <Form.Item
-                        label="Payment Method"
-                        name="paymentMethod"
-                        rules={[{ required: true, message: "Required" }]}
+                        label="New Booking Date & Time"
+                        name="newBookingDateTime"
+                        rules={[
+                            {
+                                required: true,
+                                message: "Please select a new date and time",
+                            },
+                            ({ getFieldValue }) => ({
+                                validator(_, value) {
+                                    const original = dayjs(
+                                        editingTicket?.bookingTime
+                                    );
+                                    if (!value || value.isAfter(original)) {
+                                        return Promise.resolve();
+                                    }
+                                    return Promise.reject(
+                                        new Error(
+                                            "New booking date must be after original booking time"
+                                        )
+                                    );
+                                },
+                            }),
+                        ]}
                     >
-                        <Select>
-                            <Select.Option value="credit_card">Credit Card</Select.Option>
-                            <Select.Option value="debit_card">Debit Card</Select.Option>
-                            <Select.Option value="paypal">PayPal</Select.Option>
-                        </Select>
+                        <DatePicker
+                            showTime
+                            className="w-full"
+                            format="YYYY-MM-DD HH:mm"
+                            disabledDate={(current) =>
+                                current &&
+                                current <
+                                    dayjs(editingTicket?.bookingTime).endOf(
+                                        "minute"
+                                    )
+                            }
+                        />
                     </Form.Item>
                     <Form.Item
                         label="Price"
                         name="price"
-                        rules={[{ required: true, message: "Required" }]}
+                        rules={[
+                            { required: true, message: "Please enter a price" },
+                            {
+                                validator: (_, value) =>
+                                    value > 0
+                                        ? Promise.resolve()
+                                        : Promise.reject(
+                                            new Error(
+                                                "Price must be greater than 0"
+                                            )
+                                        ),
+                            },
+                        ]}
                     >
-                        <InputNumber prefix="LKR " min={0} className="w-full" />
+                        <InputNumber min={1} className="w-full" />
                     </Form.Item>
                 </Form>
             </Modal>
