@@ -93,13 +93,13 @@ function TrainList() {
 
     const handleDelete = async (id) => {
         try {
-            const res = AxiosInstance.delete(`api/trains/${id}`);
+            const res = await AxiosInstance.delete(`api/trains/${id}`);
             if (res.data.success) {
                 message.success("Train deleted successfully");
+                fetchTrains(pagination.current, pagination.pageSize); // Re-fetch data after deletion
             } else {
                 message.error("Failed to delete train");
             }
-            fetchTrains();
         } catch (error) {
             message.error("Failed to delete train");
         }
@@ -126,17 +126,17 @@ function TrainList() {
                     price: cls.price,
                 })),
             };
-
+    
             let response;
             if (editingTrain) {
-                response = AxiosInstance.put(
+                response = await AxiosInstance.put(
                     `api/trains/${editingTrain._id}`,
                     formattedValues
                 );
             } else {
-                response = AxiosInstance.post(`api/trains`, formattedValues);
+                response = await AxiosInstance.post(`api/trains`, formattedValues);
             }
-
+    
             if (response.data.success) {
                 message.success({
                     content: editingTrain
@@ -145,13 +145,13 @@ function TrainList() {
                     duration: 2,
                 });
                 setIsModalVisible(false);
+                fetchTrains(pagination.current, pagination.pageSize); // Re-fetch data after submit
             } else {
                 message.error({
                     content: response.data.message || "Failed to save train",
                     duration: 2,
                 });
             }
-            fetchTrains();
         } catch (error) {
             console.error("Error saving train:", error);
             message.error({
@@ -160,7 +160,6 @@ function TrainList() {
             });
         }
     };
-
     const colorMap = {
         "Air Conditioned Saloon": "bg-indigo-500 text-white",
         "Second Class Reserved Seats": "bg-emerald-500 text-white",
