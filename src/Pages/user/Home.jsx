@@ -418,7 +418,7 @@ const Home = () => {
     return (
         <div className="bg-white min-h-screen">
             {/* Header Section */}
-            {/* <NavBar /> */}
+            <NavBar />
 
             {/* Hero Section */}
             <div className="relative w-full h-[80vh] md:h-[90vh] lg:h-screen">

@@ -15,7 +15,6 @@ import { Icon } from "@iconify/react";
 import axios from "axios";
 import "../assets/styles/HeaderFooterGlobalStyles.css";
 
-
 const { useToken } = theme;
 const { useBreakpoint } = Grid;
 
@@ -83,46 +82,24 @@ function NavBar() {
             key: "home",
         },
         {
-            label: "About",
-            key: "about",
+            label: "Gallery",
+            key: "gallery",
         },
         {
-            label: "Pricing",
-            key: "pricing",
-            children: [
-                {
-                    label: "Weddings",
-                    key: "wedings",
-                },
-                {
-                    label: "Birthdays",
-                    key: "birthdays",
-                },
-                {
-                    label: "Get Together",
-                    key: "gettogether",
-                },
-                {
-                    label: "Farewall Party",
-                    key: "farewall",
-                },
-                {
-                    label: "Bright to be",
-                    key: "brighttobe",
-                },
-                {
-                    label: "Aniversary",
-                    key: "aniversary",
-                },
-            ],
+            label: "History",
+            key: "history",
         },
         {
-            label: "Blog",
-            key: "blog",
+            label: "Our Service",
+            key: "ourService",
         },
         {
             label: "Contac Us",
             key: "contactus",
+        },
+        {
+            label: "Terms & Conditions",
+            key: "terms",
         },
     ];
 
@@ -259,12 +236,14 @@ function NavBar() {
             theme={{
                 components: {
                     Button: {
-                        defaultHoverBorderColor: "#99707E",
-                        defaultHoverColor: "#99707E",
+                        colorPrimary: "#1677ff", // Blue default
+                        colorPrimaryHover: "#B2BEB5", // Ash hover
+                        colorBorder: "#1677ff", // Border color
+                        colorBorderHover: "#B2BEB5", // Hover border
                     },
                     Menu: {
-                        horizontalItemSelectedColor: "#533C56",
-                        horizontalItemHoverColor: "#533C56",
+                        horizontalItemSelectedColor: "#1677ff", // Active color = blue
+                        horizontalItemHoverColor: "#B2BEB5", // Hover color = ash
                     },
                 },
             }}
@@ -273,7 +252,7 @@ function NavBar() {
                 <div style={styles.container}>
                     <div style={styles.menuContainer}>
                         <Link to="/">
-                            <img src="https://i.ibb.co/Fwzb5Cp/logo.png" alt="logo" style={styles.logo} />
+                            {/* <img src="https://i.ibb.co/Fwzb5Cp/logo.png" alt="logo" style={styles.logo} /> */}
                         </Link>
                         <Menu
                             style={{
@@ -349,7 +328,6 @@ function NavBar() {
                                             }}
                                         >
                                             <Space>
-                                                
                                                 <Avatar
                                                     size={30}
                                                     src={
@@ -375,26 +353,61 @@ function NavBar() {
                         </>
                     ) : (
                         <Space>
-                            {screens.md ? (
+                            {screens.md && (
                                 <Link
                                     to="/login"
                                     style={{ textDecoration: "none" }}
                                 >
                                     <Button
                                         className="btn_signin"
-                                        style={{ fontSize: "1.0rem" }}
+                                        style={{
+                                            fontSize: "1rem",
+                                            backgroundColor: "#B2BEB5", // Ash on hover
+                                            borderColor: "#B2BEB5",
+                                            color: "#fff",
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor =
+                                                "#1677ff"; // Default blue 
+                                            e.currentTarget.style.borderColor =
+                                                "#1677ff";
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor =
+                                                "#B2BEB5";
+                                            e.currentTarget.style.borderColor =
+                                                "#B2BEB5";
+                                        }}
                                     >
                                         Log in
                                     </Button>
                                 </Link>
-                            ) : null}
+                            )}
+
                             <Link
-                                to="/signup"
+                                to="/register"
                                 style={{ textDecoration: "none" }}
                             >
                                 <Button
                                     className="btn_signup"
-                                    style={{ fontSize: "1.0rem" }}
+                                    style={{
+                                        fontSize: "1rem",
+                                        backgroundColor: "#1677ff",
+                                        borderColor: "#1677ff",
+                                        color: "#fff",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor =
+                                            "#B2BEB5";
+                                        e.currentTarget.style.borderColor =
+                                            "#B2BEB5";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor =
+                                            "#1677ff";
+                                        e.currentTarget.style.borderColor =
+                                            "#1677ff";
+                                    }}
                                 >
                                     Sign up
                                 </Button>
