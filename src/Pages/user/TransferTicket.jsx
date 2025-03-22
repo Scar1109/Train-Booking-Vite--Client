@@ -5,9 +5,16 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import Navbar from "../../components/Navbar"
 import TicketCard from "../../components/TicketCard"
-import { QrCode, ArrowRightLeft, AlertTriangle, CheckCircle2, Lock, Copy, Timer } from "lucide-react"
-// Import the CSS file
-import "../../css/Tansfer-Ticket.css"
+import { 
+  QrCode, 
+  ArrowRightLeft, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Lock, 
+  Copy, 
+  Timer 
+} from "lucide-react"
+import "../../css/Tansfer-Ticket.css" // Import the CSS file
 
 // Dummy ticket data if none is passed through location state
 const dummyTickets = [
@@ -67,6 +74,9 @@ const TransferTicket = () => {
   const [isOtpValid, setIsOtpValid] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
 
+  // Confirmation checkbox state
+  const [confirmChecked, setConfirmChecked] = useState(false)
+
   // If a ticket was passed through location state, select it automatically
   useEffect(() => {
     if (location.state?.ticket) {
@@ -79,7 +89,8 @@ const TransferTicket = () => {
   useEffect(() => {
     if (step === 2 && selectedTicket) {
       // Generate a random token for the transfer link
-      const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+      const token = Math.random().toString(36).substring(2, 15) 
+                  + Math.random().toString(36).substring(2, 15)
       const baseUrl = window.location.origin
       const link = `${baseUrl}/receive-ticket/${token}`
       setTransferLink(link)
@@ -148,8 +159,8 @@ const TransferTicket = () => {
     // Simulate API call for OTP verification
     setTimeout(() => {
       const enteredOtp = otpValue.join("")
-      // In a real app, you would verify this with your backend
-      // For demo purposes, any 6-digit OTP is considered valid
+      // In a real app, verify this with your backend
+      // For demo, any 6-digit numeric OTP is considered valid
       const isValid = enteredOtp.length === 6 && /^\d+$/.test(enteredOtp)
 
       setIsOtpValid(isValid)
@@ -185,6 +196,12 @@ const TransferTicket = () => {
       return
     }
 
+    // If the user hasn't checked confirmation, don't proceed
+    if (!confirmChecked) {
+      toast.error("Please confirm that this transfer is legitimate.")
+      return
+    }
+
     setIsTransferring(true)
 
     // Simulate API call for transfer
@@ -212,46 +229,67 @@ const TransferTicket = () => {
         {/* Progress Steps */}
         <div className="mb-8">
           <div className="flex items-center justify-center">
+            {/* Step 1 */}
             <div className="flex items-center">
               <div
-                className={`flex items-center justify-center h-8 w-8 rounded-full ${step >= 1 ? "bg-railway-blue text-white" : "bg-gray-200 text-gray-500"}`}
+                className={`flex items-center justify-center h-8 w-8 rounded-full ${
+                  step >= 1 ? "bg-railway-blue text-white" : "bg-gray-200 text-gray-500"
+                }`}
               >
                 1
               </div>
-              <div className={`ml-2 text-sm ${step >= 1 ? "text-railway-blue font-medium" : "text-gray-500"}`}>
+              <div
+                className={`ml-2 text-sm ${
+                  step >= 1 ? "text-railway-blue font-medium" : "text-gray-500"
+                }`}
+              >
                 Select Ticket
               </div>
             </div>
 
-            <div className={`w-12 h-0.5 mx-2 ${step >= 2 ? "bg-railway-blue" : "bg-gray-200"}`}></div>
+            <div className={`w-12 h-0.5 mx-2 ${step >= 2 ? "bg-railway-blue" : "bg-gray-200"}`} />
 
+            {/* Step 2 */}
             <div className="flex items-center">
               <div
-                className={`flex items-center justify-center h-8 w-8 rounded-full ${step >= 2 ? "bg-railway-blue text-white" : "bg-gray-200 text-gray-500"}`}
+                className={`flex items-center justify-center h-8 w-8 rounded-full ${
+                  step >= 2 ? "bg-railway-blue text-white" : "bg-gray-200 text-gray-500"
+                }`}
               >
                 2
               </div>
-              <div className={`ml-2 text-sm ${step >= 2 ? "text-railway-blue font-medium" : "text-gray-500"}`}>
+              <div
+                className={`ml-2 text-sm ${
+                  step >= 2 ? "text-railway-blue font-medium" : "text-gray-500"
+                }`}
+              >
                 Generate Link
               </div>
             </div>
 
-            <div className={`w-12 h-0.5 mx-2 ${step >= 3 ? "bg-railway-blue" : "bg-gray-200"}`}></div>
+            <div className={`w-12 h-0.5 mx-2 ${step >= 3 ? "bg-railway-blue" : "bg-gray-200"}`} />
 
+            {/* Step 3 */}
             <div className="flex items-center">
               <div
-                className={`flex items-center justify-center h-8 w-8 rounded-full ${step >= 3 ? "bg-railway-blue text-white" : "bg-gray-200 text-gray-500"}`}
+                className={`flex items-center justify-center h-8 w-8 rounded-full ${
+                  step >= 3 ? "bg-railway-blue text-white" : "bg-gray-200 text-gray-500"
+                }`}
               >
                 3
               </div>
-              <div className={`ml-2 text-sm ${step >= 3 ? "text-railway-blue font-medium" : "text-gray-500"}`}>
+              <div
+                className={`ml-2 text-sm ${
+                  step >= 3 ? "text-railway-blue font-medium" : "text-gray-500"
+                }`}
+              >
                 Confirm
               </div>
             </div>
           </div>
         </div>
 
-        {/* Content based on current step */}
+        {/* Step 1: Select Ticket */}
         {step === 1 && (
           <div className="bg-white rounded-xl shadow-sm p-6 animate-slide-up">
             <h2 className="section-title flex items-center">
@@ -329,6 +367,7 @@ const TransferTicket = () => {
           </div>
         )}
 
+        {/* Step 2: Generate Link / QR */}
         {step === 2 && (
           <div className="bg-white rounded-xl shadow-sm p-6 animate-slide-up">
             <h2 className="section-title flex items-center">
@@ -374,7 +413,12 @@ const TransferTicket = () => {
                 <div className="flex-1 border border-gray-200 rounded-lg p-4">
                   <h3 className="font-medium mb-3">Share Transfer Link</h3>
                   <div className="relative">
-                    <input type="text" value={transferLink} readOnly className="input-field pr-10 bg-gray-50 text-sm" />
+                    <input 
+                      type="text" 
+                      value={transferLink} 
+                      readOnly 
+                      className="input-field pr-10 bg-gray-50 text-sm" 
+                    />
                     <button
                       onClick={copyLinkToClipboard}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-railway-blue hover:text-railway-darkBlue"
@@ -403,6 +447,7 @@ const TransferTicket = () => {
                   Ask the recipient to share the OTP they received after accessing the transfer link.
                 </p>
 
+                {/* OTP Inputs */}
                 <div className="flex justify-center gap-2 mb-4">
                   {otpValue.map((digit, index) => (
                     <input
@@ -464,7 +509,7 @@ const TransferTicket = () => {
                   onChange={(e) => setTransferReason(e.target.value)}
                   placeholder="e.g. Sharing with a family member"
                   className="input-field min-h-[80px]"
-                ></textarea>
+                />
               </div>
             </div>
 
@@ -476,6 +521,7 @@ const TransferTicket = () => {
           </div>
         )}
 
+        {/* Step 3: Confirm Transfer */}
         {step === 3 && (
           <div className="bg-white rounded-xl shadow-sm p-6 animate-slide-up">
             <h2 className="section-title flex items-center">
@@ -518,11 +564,13 @@ const TransferTicket = () => {
                 </div>
               )}
 
+              {/* Confirmation Checkbox */}
               <div className="flex items-center mb-6">
                 <input
                   id="confirm"
                   type="checkbox"
-                  required
+                  checked={confirmChecked}
+                  onChange={() => setConfirmChecked(!confirmChecked)}
                   className="h-4 w-4 text-railway-blue focus:ring-railway-blue border-gray-300 rounded"
                 />
                 <label htmlFor="confirm" className="ml-2 block text-sm text-gray-700">
@@ -535,7 +583,11 @@ const TransferTicket = () => {
               <button onClick={() => setStep(2)} className="btn-secondary">
                 Back
               </button>
-              <button onClick={handleSubmitTransfer} className="btn-primary" disabled={isTransferring}>
+              <button 
+                onClick={handleSubmitTransfer} 
+                className="btn-primary" 
+                disabled={!confirmChecked || isTransferring}
+              >
                 {isTransferring ? (
                   <div className="flex items-center">
                     <svg
@@ -605,4 +657,3 @@ const TransferTicket = () => {
 }
 
 export default TransferTicket
-

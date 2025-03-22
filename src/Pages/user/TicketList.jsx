@@ -84,7 +84,7 @@ const TicketShareComponent = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                       </svg>
                     </button>
-                    <button onClick={() => navigate('/receive')} className="inline-flex items-center bg-blue-500 text-white border border-white border-opacity-30 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all">
+                    <button onClick={() => navigate('/receive/tick254')} className="inline-flex items-center bg-blue-500 text-white border border-white border-opacity-30 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all">
                       Receive a Ticket
                       <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
