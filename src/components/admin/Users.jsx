@@ -154,7 +154,7 @@ function Users() {
             title: "Actions",
             key: "actions",
             render: (_, record) => (
-                <>
+                <div className="flex flex-row">
                     <Button icon={<EditOutlined />} onClick={() => showEditModal(record)} />
                     <Popconfirm
                         title="Are you sure you want to delete this user?"
@@ -164,7 +164,7 @@ function Users() {
                     >
                         <Button icon={<DeleteOutlined />} danger className="ml-2" />
                     </Popconfirm>
-                </>
+                </div>
             ),
         }
         
