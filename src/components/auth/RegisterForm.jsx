@@ -58,8 +58,8 @@ const RegisterForm = () => {
     return (
         <div className="register-form-container">
             <div className="form-header">
-                <h3>Sign Up</h3>
-                <p>Welcome back! Please enter your details</p>
+                <h3 className="font-bold text-2xl mb-3 text-blue-600">Sign Up</h3>
+                <p className="font-medium">Welcome back! Please enter your details</p>
             </div>
             <br />
 
