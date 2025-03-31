@@ -5,16 +5,9 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import Navbar from "../../components/Navbar"
 import TicketCard from "../../components/TicketCard"
-import { 
-  QrCode, 
-  ArrowRightLeft, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Lock, 
-  Copy, 
-  Timer 
-} from "lucide-react"
+import { QrCode, ArrowRightLeft, AlertTriangle, CheckCircle2, Lock, Copy, Timer, Mail } from "lucide-react"
 import "../../css/Tansfer-Ticket.css" // Import the CSS file
+import AxiosInstance from "../../AxiosInstance"
 
 // Dummy ticket data if none is passed through location state
 const dummyTickets = [
@@ -73,6 +66,9 @@ const TransferTicket = () => {
   const [isLinkCopied, setIsLinkCopied] = useState(false)
   const [isOtpValid, setIsOtpValid] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
+  const [recipientEmail, setRecipientEmail] = useState("")
+  const [isGeneratingOtp, setIsGeneratingOtp] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
 
   // Confirmation checkbox state
   const [confirmChecked, setConfirmChecked] = useState(false)
@@ -89,8 +85,7 @@ const TransferTicket = () => {
   useEffect(() => {
     if (step === 2 && selectedTicket) {
       // Generate a random token for the transfer link
-      const token = Math.random().toString(36).substring(2, 15) 
-                  + Math.random().toString(36).substring(2, 15)
+      const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
       const baseUrl = window.location.origin
       const link = `${baseUrl}/receive-ticket/${token}`
       setTransferLink(link)
@@ -152,26 +147,91 @@ const TransferTicket = () => {
     }
   }
 
+  // Generate and send OTP to recipient email
+  const generateAndSendOtp = async () => {
+    if (!recipientEmail || !selectedTicket) {
+      toast.error("Please enter the recipient's email address")
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(recipientEmail)) {
+      toast.error("Please enter a valid email address")
+      return
+    }
+
+    setIsGeneratingOtp(true)
+
+    try {
+      const response = await AxiosInstance.post("/api/otp/generate", {
+        recipientEmail,
+        ticketId: selectedTicket.id,
+        ticketDetails: {
+          from: selectedTicket.from,
+          to: selectedTicket.to,
+          departureTime: selectedTicket.departureTime,
+          trainName: selectedTicket.trainName,
+          ticketNumber: selectedTicket.ticketNumber,
+        },
+      })
+
+      if (response.data.success) {
+        setOtpSent(true)
+        toast.success("OTP sent successfully to the recipient's email")
+
+        // Reset OTP input fields
+        setOtpValue(["", "", "", "", "", ""])
+
+        // Focus on the first OTP input field
+        setTimeout(() => {
+          const firstInput = document.getElementById("otp-0")
+          if (firstInput) {
+            firstInput.focus()
+          }
+        }, 500)
+      } else {
+        toast.error(response.data.message || "Failed to send OTP")
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error)
+      toast.error(error.response?.data?.message || "Failed to send OTP. Please try again.")
+    } finally {
+      setIsGeneratingOtp(false)
+    }
+  }
+
   // Handle OTP verification
-  const verifyOtp = () => {
+  const verifyOtp = async () => {
+    const enteredOtp = otpValue.join("")
+
+    if (enteredOtp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP")
+      return
+    }
+
     setIsVerifying(true)
 
-    // Simulate API call for OTP verification
-    setTimeout(() => {
-      const enteredOtp = otpValue.join("")
-      // In a real app, verify this with your backend
-      // For demo, any 6-digit numeric OTP is considered valid
-      const isValid = enteredOtp.length === 6 && /^\d+$/.test(enteredOtp)
+    try {
+      const response = await AxiosInstance.post("/api/otp/verify", {
+        email: recipientEmail,
+        otp: enteredOtp,
+        ticketId: selectedTicket.id,
+      })
 
-      setIsOtpValid(isValid)
-      setIsVerifying(false)
-
-      if (isValid) {
+      if (response.data.success) {
+        setIsOtpValid(true)
+        toast.success("OTP verified successfully")
         setStep(3)
       } else {
-        toast.error("Invalid OTP. Please try again.")
+        toast.error(response.data.message || "Invalid OTP. Please try again.")
       }
-    }, 1500)
+    } catch (error) {
+      console.error("Error verifying OTP:", error)
+      toast.error(error.response?.data?.message || "Invalid OTP. Please try again.")
+    } finally {
+      setIsVerifying(false)
+    }
   }
 
   // Copy transfer link to clipboard
@@ -238,11 +298,7 @@ const TransferTicket = () => {
               >
                 1
               </div>
-              <div
-                className={`ml-2 text-sm ${
-                  step >= 1 ? "text-railway-blue font-medium" : "text-gray-500"
-                }`}
-              >
+              <div className={`ml-2 text-sm ${step >= 1 ? "text-railway-blue font-medium" : "text-gray-500"}`}>
                 Select Ticket
               </div>
             </div>
@@ -258,11 +314,7 @@ const TransferTicket = () => {
               >
                 2
               </div>
-              <div
-                className={`ml-2 text-sm ${
-                  step >= 2 ? "text-railway-blue font-medium" : "text-gray-500"
-                }`}
-              >
+              <div className={`ml-2 text-sm ${step >= 2 ? "text-railway-blue font-medium" : "text-gray-500"}`}>
                 Generate Link
               </div>
             </div>
@@ -278,11 +330,7 @@ const TransferTicket = () => {
               >
                 3
               </div>
-              <div
-                className={`ml-2 text-sm ${
-                  step >= 3 ? "text-railway-blue font-medium" : "text-gray-500"
-                }`}
-              >
+              <div className={`ml-2 text-sm ${step >= 3 ? "text-railway-blue font-medium" : "text-gray-500"}`}>
                 Confirm
               </div>
             </div>
@@ -413,12 +461,7 @@ const TransferTicket = () => {
                 <div className="flex-1 border border-gray-200 rounded-lg p-4">
                   <h3 className="font-medium mb-3">Share Transfer Link</h3>
                   <div className="relative">
-                    <input 
-                      type="text" 
-                      value={transferLink} 
-                      readOnly 
-                      className="input-field pr-10 bg-gray-50 text-sm" 
-                    />
+                    <input type="text" value={transferLink} readOnly className="input-field pr-10 bg-gray-50 text-sm" />
                     <button
                       onClick={copyLinkToClipboard}
                       className="absolute right-2 top-1/2 transform -translate-y-1/2 text-railway-blue hover:text-railway-darkBlue"
@@ -438,38 +481,39 @@ const TransferTicket = () => {
                 </div>
               </div>
 
+              {/* Email OTP Section */}
               <div className="mb-6 border border-gray-200 rounded-lg p-4">
                 <h3 className="font-medium mb-3 flex items-center">
-                  <Lock className="h-4 w-4 mr-2 text-railway-blue" />
-                  Enter OTP from Recipient
+                  <Mail className="h-4 w-4 mr-2 text-railway-blue" />
+                  Send OTP to Recipient
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  Ask the recipient to share the OTP they received after accessing the transfer link.
+                  Enter the recipient's email address to send them a verification OTP.
                 </p>
 
-                {/* OTP Inputs */}
-                <div className="flex justify-center gap-2 mb-4">
-                  {otpValue.map((digit, index) => (
-                    <input
-                      key={index}
-                      id={`otp-${index}`}
-                      type="text"
-                      maxLength="1"
-                      value={digit}
-                      onChange={(e) => handleOtpChange(index, e.target.value)}
-                      className="w-12 h-12 text-center text-xl font-bold border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-railway-blue"
-                    />
-                  ))}
+                <div className="mb-4">
+                  <label htmlFor="recipientEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                    Recipient's Email Address
+                  </label>
+                  <input
+                    id="recipientEmail"
+                    type="email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    placeholder="email@example.com"
+                    className="input-field"
+                    disabled={otpSent}
+                  />
                 </div>
 
                 <button
-                  onClick={verifyOtp}
-                  disabled={otpValue.join("").length !== 6 || isVerifying}
-                  className={`w-full btn-primary ${
-                    otpValue.join("").length !== 6 ? "opacity-50 cursor-not-allowed" : ""
+                  onClick={generateAndSendOtp}
+                  disabled={!recipientEmail || isGeneratingOtp || otpSent}
+                  className={`w-full btn-primary mb-4 ${
+                    !recipientEmail || isGeneratingOtp || otpSent ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
-                  {isVerifying ? (
+                  {isGeneratingOtp ? (
                     <div className="flex items-center justify-center">
                       <svg
                         className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
@@ -491,12 +535,87 @@ const TransferTicket = () => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Verifying...
+                      Sending OTP...
+                    </div>
+                  ) : otpSent ? (
+                    <div className="flex items-center justify-center">
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      OTP Sent
                     </div>
                   ) : (
-                    "Verify OTP"
+                    "Send OTP to Recipient"
                   )}
                 </button>
+
+                {otpSent && (
+                  <>
+                    <div className="p-3 bg-green-50 border border-green-100 rounded-lg mb-4">
+                      <p className="text-sm text-green-800 flex items-start">
+                        <CheckCircle2 className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                        <span>
+                          OTP has been sent to the recipient's email. Ask them to check their inbox and provide the
+                          6-digit code.
+                        </span>
+                      </p>
+                    </div>
+
+                    <h3 className="font-medium mb-3 flex items-center">
+                      <Lock className="h-4 w-4 mr-2 text-railway-blue" />
+                      Enter OTP from Recipient
+                    </h3>
+
+                    {/* OTP Inputs */}
+                    <div className="flex justify-center gap-2 mb-4">
+                      {otpValue.map((digit, index) => (
+                        <input
+                          key={index}
+                          id={`otp-${index}`}
+                          type="text"
+                          maxLength="1"
+                          value={digit}
+                          onChange={(e) => handleOtpChange(index, e.target.value)}
+                          className="w-12 h-12 text-center text-xl font-bold border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-railway-blue"
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={verifyOtp}
+                      disabled={otpValue.join("").length !== 6 || isVerifying}
+                      className={`w-full btn-primary ${
+                        otpValue.join("").length !== 6 ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {isVerifying ? (
+                        <div className="flex items-center justify-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Verifying...
+                        </div>
+                      ) : (
+                        "Verify OTP"
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
 
               <div className="mt-4">
@@ -557,6 +676,11 @@ const TransferTicket = () => {
                 <TicketCard ticket={selectedTicket} />
               </div>
 
+              <div className="mb-6">
+                <h3 className="font-medium mb-2">Recipient Email:</h3>
+                <p className="text-sm bg-gray-50 p-3 rounded-md border border-gray-200">{recipientEmail}</p>
+              </div>
+
               {transferReason && (
                 <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 mb-6">
                   <h3 className="font-medium mb-1">Reason for transfer:</h3>
@@ -583,9 +707,9 @@ const TransferTicket = () => {
               <button onClick={() => setStep(2)} className="btn-secondary">
                 Back
               </button>
-              <button 
-                onClick={handleSubmitTransfer} 
-                className="btn-primary" 
+              <button
+                onClick={handleSubmitTransfer}
+                className="btn-primary"
                 disabled={!confirmChecked || isTransferring}
               >
                 {isTransferring ? (
@@ -657,3 +781,4 @@ const TransferTicket = () => {
 }
 
 export default TransferTicket
+
