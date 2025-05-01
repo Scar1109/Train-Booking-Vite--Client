@@ -16,6 +16,8 @@ const TicketBooking = () => {
     const isReturnTrip = location.state?.isReturn || false;
     const [currentStep, setCurrentStep] = useState(location.state?.startStep || 2); // Default to Check Availability step
     const [activeTab, setActiveTab] = useState("oneway");
+    const [acceptTerms, setAcceptTerms] = useState(false)
+    const [paymentMethod, setPaymentMethod] = useState("")
 
     const goToStep = (step) => {
         if (step === 1) {
@@ -192,9 +194,418 @@ const TicketBooking = () => {
                 )}
 
                 {currentStep === 3 && (
-                    <div>
+                    <div className="space-y-6">
                         <h2 className="text-2xl font-semibold mb-4">Confirmation & Payment</h2>
-                        <p>Enter your payment details here...</p>
+
+                        {/* Primary Passenger Details */}
+                        <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                            <h3 className="text-lg font-medium text-gray-800 mb-3">Primary Passenger Details</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-1">
+                                    <div className="flex items-center">
+                                        <span className="text-red-500 mr-1">*</span>
+                                        <label className="text-sm">Title</label>
+                                    </div>
+                                    <select className="w-full border border-gray-300 rounded p-2 text-sm">
+                                        <option>Mr.</option>
+                                        <option>Mrs.</option>
+                                        <option>Ms.</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <div className="flex items-center">
+                                        <span className="text-red-500 mr-1">*</span>
+                                        <label className="text-sm">First Name</label>
+                                    </div>
+                                    <input type="text" placeholder="First Name" className="w-full border border-gray-300 rounded p-2 text-sm" />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <div className="flex items-center">
+                                        <span className="text-red-500 mr-1">*</span>
+                                        <label className="text-sm">Last Name</label>
+                                    </div>
+                                    <input type="text" placeholder="Last Name" className="w-full border border-gray-300 rounded p-2 text-sm" />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <div className="flex items-center">
+                                        <span className="text-red-500 mr-1">*</span>
+                                        <label className="text-sm">Gender</label>
+                                    </div>
+                                    <select className="w-full border border-gray-300 rounded p-2 text-sm">
+                                        <option>Male</option>
+                                        <option>Female</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1 md:col-span-2">
+                                    <div className="flex items-center">
+                                        <span className="text-red-500 mr-1">*</span>
+                                        <label className="text-sm">Email</label>
+                                    </div>
+                                    <input type="email" placeholder="Email" className="w-full border border-gray-300 rounded p-2 text-sm" />
+                                    <p className="text-xs text-red-500">
+                                        You must provide a valid email address to receive ticket information via email
+                                    </p>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <div className="flex items-center">
+                                        <span className="text-red-500 mr-1">*</span>
+                                        <label className="text-sm">Select Type</label>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        <button className="bg-gray-700 text-white py-1 px-2 text-sm">NIC</button>
+                                        <button className="bg-gray-400 text-white py-1 px-2 text-sm">Passport</button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <div className="flex items-center">
+                                        <span className="text-red-500 mr-1">*</span>
+                                        <label className="text-sm">NIC</label>
+                                    </div>
+                                    <input type="text" placeholder="NIC" className="w-full border border-gray-300 rounded p-2 text-sm" />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-sm">Mobile No</label>
+                                    <input type="text" placeholder="Mobile No" className="w-full border border-gray-300 rounded p-2 text-sm" />
+                                    <p className="text-xs text-gray-500">
+                                        If you wish to receive the ticket information via SMS, kindly provide a valid local mobile number
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Other Passenger Details */}
+                        <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                            <h3 className="text-lg font-medium text-gray-800 mb-1">Other Passenger Details</h3>
+                            <p className="text-sm mb-2">Please enter details of all other passengers</p>
+                            <p className="text-xs text-red-500 mb-3">
+                                If the passenger is below 17 years and does not have either passport or NIC, please select the 'Dependent'
+                                category.
+                            </p>
+
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-full">
+                                    <thead>
+                                        <tr className="text-left">
+                                            <th className="pb-2 font-medium">Passenger</th>
+                                            <th className="pb-2 font-medium">Type</th>
+                                            <th className="pb-2 font-medium">Identification No</th>
+                                            <th className="pb-2 font-medium">Gender</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td className="py-1">Passenger 1</td>
+                                            <td className="py-1">
+                                                <select className="w-full border border-gray-300 rounded p-1 text-sm">
+                                                    <option>Select</option>
+                                                </select>
+                                            </td>
+                                            <td className="py-1">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Identification No"
+                                                    className="w-full border border-gray-300 rounded p-1 text-sm"
+                                                />
+                                            </td>
+                                            <td className="py-1">
+                                                <select className="w-full border border-gray-300 rounded p-1 text-sm">
+                                                    <option>Select</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p className="text-xs text-gray-600 mt-3">
+                                Mandatory fields are marked with <span className="text-red-500">*</span>
+                            </p>
+                        </div>
+
+                        {/* Seat Selection */}
+                        <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                            <h3 className="text-lg font-medium text-gray-800 mb-1">Seat Selection</h3>
+                            <p className="text-sm mb-3">Select One Way Seat Class</p>
+                            <hr className="border-gray-300 mb-4" />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Air Conditioned Saloon */}
+                                <div className="bg-white rounded-md overflow-hidden shadow-sm">
+                                    <div className="p-4 flex justify-between">
+                                        <div>
+                                            <h4 className="font-medium">Air Conditioned</h4>
+                                            <p className="text-gray-600">Saloon</p>
+                                        </div>
+                                        <div className="flex items-start">
+                                            <div className="bg-gray-200 rounded-full px-2 py-1 flex items-center text-xs">
+                                                <svg
+                                                    className="w-4 h-4 text-gray-600 mr-1"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="2"
+                                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    ></path>
+                                                </svg>
+                                                LKR 3000
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="px-4 pb-4 flex justify-center">
+                                        <img src="https://i.ibb.co/Pvg06fvw/seat.png?height=60&width=60" alt="Air Conditioned Seat" className="h-16 w-16" />
+                                    </div>
+                                    <div className="bg-blue-500 text-white p-2 flex justify-between">
+                                        <span>Available</span>
+                                        <span className="font-bold">15</span>
+                                    </div>
+                                </div>
+
+                                {/* Third Class Reserved Seats */}
+                                <div className="bg-white rounded-md overflow-hidden shadow-sm">
+                                    <div className="p-4 flex justify-between">
+                                        <div>
+                                            <h4 className="font-medium">Third Class Reserved</h4>
+                                            <p className="text-gray-600">Seats</p>
+                                        </div>
+                                        <div className="flex items-start">
+                                            <div className="bg-gray-200 rounded-full px-2 py-1 flex items-center text-xs">
+                                                <svg
+                                                    className="w-4 h-4 text-gray-600 mr-1"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="2"
+                                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                    ></path>
+                                                </svg>
+                                                LKR 1500
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="px-4 pb-4 flex justify-center">
+                                        <img src="https://i.ibb.co/ns8n5myc/waiting-room.png?height=60&width=60" alt="Third Class Seats" className="h-16 w-16" />
+                                    </div>
+                                    <div className="bg-blue-500 text-white p-2 flex justify-between">
+                                        <span>Available</span>
+                                        <span className="font-bold">22</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Summary */}
+                        <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                            <h3 className="text-lg font-medium text-gray-800 mb-3">Summary</h3>
+
+                            <div className="bg-white border border-gray-300 rounded-md mb-3">
+                                <div className="bg-gray-100 p-2 text-center font-medium border-b border-gray-300">Forward Train</div>
+
+                                <div className="p-2">
+                                    <div className="grid grid-cols-2 py-1.5 px-2">
+                                        <span className="text-sm font-medium">Train Name & No</span>
+                                        <span className="text-sm">1005 Podi Menike</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 py-1.5 px-2">
+                                        <span className="text-sm font-medium">Start Station</span>
+                                        <span className="text-sm">Colombo Fort</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 py-1.5 px-2">
+                                        <span className="text-sm font-medium">End Station</span>
+                                        <span className="text-sm">Badulla</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 py-1.5 px-2">
+                                        <span className="text-sm font-medium">Departure Date</span>
+                                        <span className="text-sm">2025-05-29</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 py-1.5 px-2">
+                                        <span className="text-sm font-medium">Time Start -&gt; End</span>
+                                        <span className="text-sm">05:55 - 16:20</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 py-1.5 px-2">
+                                        <span className="text-sm font-medium">No of Passengers</span>
+                                        <span className="text-sm">2</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 py-1.5 px-2">
+                                        <span className="text-sm font-medium">Train Class</span>
+                                        <span className="text-sm flex items-center">
+                                            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded mr-2">Selected</span>
+                                            Air Conditioned Saloon
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 py-1.5 px-2">
+                                        <span className="text-sm font-medium">Price</span>
+                                        <span className="text-sm flex items-center">
+                                            <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded mr-2">One Person</span>
+                                            3000
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-700 text-white p-3 rounded-b-md flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <svg
+                                            className="w-5 h-5 mr-2"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            ></path>
+                                        </svg>
+                                    </div>
+                                    <span className="font-medium">Total Price - LKR: 6000</span>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Terms & Conditions and Payment Method */}
+                        <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                            <div className="mb-4 flex items-start">
+                                <input
+                                    type="checkbox"
+                                    id="terms"
+                                    className="mt-1 mr-2"
+                                    checked={acceptTerms}
+                                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                                />
+                                <label htmlFor="terms" className="text-sm">
+                                    Terms & Conditions
+                                </label>
+                            </div>
+
+                            <h3 className="text-lg font-medium text-gray-800 mb-3">Payment Method</h3>
+                            <div className="flex items-center mb-4">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5 mr-2 text-gray-600"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                                    />
+                                </svg>
+                                <span className="text-sm">Please Select Payment Method</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="border border-gray-200 rounded-md p-3 flex flex-col items-center">
+                                    <div className="flex items-center mb-2">
+                                        <input
+                                            type="radio"
+                                            id="visa"
+                                            name="paymentMethod"
+                                            className="mr-2"
+                                            checked={paymentMethod === "visa"}
+                                            onChange={() => setPaymentMethod("visa")}
+                                        />
+                                        <label htmlFor="visa" className="flex items-center">
+                                            <span className="text-blue-600 font-bold text-lg">VISA</span>
+                                        </label>
+                                    </div>
+                                    <div className="text-sm text-center">
+                                        <p>Service Charge</p>
+                                        <p>5.0%</p>
+                                    </div>
+                                </div>
+
+                                <div className="border border-gray-200 rounded-md p-3 flex flex-col items-center">
+                                    <div className="flex items-center mb-2">
+                                        <input
+                                            type="radio"
+                                            id="mastercard"
+                                            name="paymentMethod"
+                                            className="mr-2"
+                                            checked={paymentMethod === "mastercard"}
+                                            onChange={() => setPaymentMethod("mastercard")}
+                                        />
+                                        <label htmlFor="mastercard" className="flex items-center">
+                                            <span className="text-red-500 font-bold text-lg">
+                                                <span className="text-yellow-500">master</span>card
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div className="text-sm text-center">
+                                        <p>Service Charge</p>
+                                        <p>5.0%</p>
+                                    </div>
+                                </div>
+
+                                <div className="border border-gray-200 rounded-md p-3 flex flex-col items-center">
+                                    <div className="flex items-center mb-2">
+                                        <input
+                                            type="radio"
+                                            id="discover"
+                                            name="paymentMethod"
+                                            className="mr-2"
+                                            checked={paymentMethod === "discover"}
+                                            onChange={() => setPaymentMethod("discover")}
+                                        />
+                                        <label htmlFor="discover" className="flex items-center">
+                                            <span className="text-blue-800 font-bold text-lg">
+                                                <span className="text-blue-500">D</span>iscover
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div className="text-sm text-center">
+                                        <p>Service Charge</p>
+                                        <p>6.5%</p>
+                                    </div>
+                                </div>
+
+                                <div className="border border-gray-200 rounded-md p-3 flex flex-col items-center">
+                                    <div className="flex items-center mb-2">
+                                        <input
+                                            type="radio"
+                                            id="lankaQR"
+                                            name="paymentMethod"
+                                            className="mr-2"
+                                            checked={paymentMethod === "lankaQR"}
+                                            onChange={() => setPaymentMethod("lankaQR")}
+                                        />
+                                        <label htmlFor="lankaQR" className="flex items-center">
+                                            <span className="font-bold text-lg">
+                                                LANKA<span className="text-red-500">QR</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div className="text-sm text-center">
+                                        <p>Service Charge</p>
+                                        <p>5.0%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
 
