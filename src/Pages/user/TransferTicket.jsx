@@ -5,52 +5,9 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import Navbar from "../../components/NavBar"
 import TicketCard from "../../components/TicketCard"
-import { 
-  QrCode, 
-  ArrowRightLeft, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Lock, 
-  Copy, 
-  Timer 
-} from "lucide-react"
+import { QrCode, ArrowRightLeft, AlertTriangle, CheckCircle2, Lock, Copy, Mail } from "lucide-react"
 import "../../css/Tansfer-Ticket.css" // Import the CSS file
-
-// Dummy ticket data if none is passed through location state
-const dummyTickets = [
-  {
-    id: 1,
-    ticketNumber: "SR-12345",
-    from: "Colombo Fort",
-    to: "Kandy",
-    departureTime: "2023-10-15T08:30:00",
-    trainName: "Udarata Menike",
-    coach: "A",
-    seat: "15",
-    passengerName: "John Perera",
-    status: "active",
-    qrCode: "SR-12345-COLOMBO-KANDY-20231015",
-    transfers: [],
-    transferLimit: 3,
-    price: 750,
-  },
-  {
-    id: 2,
-    ticketNumber: "SR-12346",
-    from: "Colombo Fort",
-    to: "Galle",
-    departureTime: "2023-10-18T16:45:00",
-    trainName: "Ruhunu Kumari",
-    coach: "B",
-    seat: "22",
-    passengerName: "John Perera",
-    status: "active",
-    qrCode: "SR-12346-COLOMBO-GALLE-20231018",
-    transfers: [],
-    transferLimit: 2,
-    price: 950,
-  },
-]
+import AxiosInstance from "../../AxiosInstance"
 
 const TransferTicket = () => {
   const location = useLocation()
@@ -58,7 +15,7 @@ const TransferTicket = () => {
 
   // Get ticket from location state or use dummy data
   const [selectedTicket, setSelectedTicket] = useState(location.state?.ticket || null)
-  const [availableTickets, setAvailableTickets] = useState(dummyTickets)
+  const [availableTickets, setAvailableTickets] = useState([])
   const [step, setStep] = useState(1)
   const [transferReason, setTransferReason] = useState("")
   const [isTransferring, setIsTransferring] = useState(false)
@@ -73,9 +30,19 @@ const TransferTicket = () => {
   const [isLinkCopied, setIsLinkCopied] = useState(false)
   const [isOtpValid, setIsOtpValid] = useState(false)
   const [isVerifying, setIsVerifying] = useState(false)
+  const [recipientEmail, setRecipientEmail] = useState("")
+  const [isGeneratingOtp, setIsGeneratingOtp] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [token, setToken] = useState("")
 
   // Confirmation checkbox state
   const [confirmChecked, setConfirmChecked] = useState(false)
+
+  // Fetch available tickets when component mounts
+  useEffect(() => {
+    fetchAvailableTickets()
+  }, [])
 
   // If a ticket was passed through location state, select it automatically
   useEffect(() => {
@@ -88,14 +55,6 @@ const TransferTicket = () => {
   // Generate a transfer link and QR code when moving to step 2
   useEffect(() => {
     if (step === 2 && selectedTicket) {
-      // Generate a random token for the transfer link
-      const token = Math.random().toString(36).substring(2, 15) 
-                  + Math.random().toString(36).substring(2, 15)
-      const baseUrl = window.location.origin
-      const link = `${baseUrl}/receive-ticket/${token}`
-      setTransferLink(link)
-      setQrCodeValue(link)
-
       // Set expiry time to 30 minutes from now
       const expiry = new Date()
       expiry.setMinutes(expiry.getMinutes() + 30)
@@ -127,6 +86,24 @@ const TransferTicket = () => {
     return () => clearInterval(interval)
   }, [expiryTime])
 
+  // Fetch available tickets from the API
+  const fetchAvailableTickets = async () => {
+    try {
+      setIsLoading(true)
+      const response = await AxiosInstance.get("/api/tickets")
+      if (response.data.success) {
+        setAvailableTickets(response.data.tickets.filter((ticket) => ticket.status === "active"))
+      } else {
+        toast.error("Failed to fetch tickets")
+      }
+    } catch (error) {
+      console.error("Error fetching tickets:", error)
+      toast.error(error.response?.data?.message || "Failed to fetch tickets")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // Handle ticket selection
   const handleSelectTicket = (ticket) => {
     setSelectedTicket(ticket)
@@ -152,26 +129,101 @@ const TransferTicket = () => {
     }
   }
 
+  // Generate and send OTP to recipient email
+  const generateAndSendOtp = async () => {
+    if (!recipientEmail || !selectedTicket) {
+      toast.error("Please enter the recipient's email address")
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(recipientEmail)) {
+      toast.error("Please enter a valid email address")
+      return
+    }
+
+    setIsGeneratingOtp(true)
+
+    try {
+      const response = await AxiosInstance.post("/api/otp/generate", {
+        recipientEmail,
+        ticketId: selectedTicket._id,
+        ticketDetails: {
+          from: selectedTicket.from,
+          to: selectedTicket.to,
+          departureTime: selectedTicket.departureTime,
+          trainName: selectedTicket.trainName,
+          ticketNumber: selectedTicket.ticketNumber,
+        },
+      })
+
+      if (response.data.success) {
+        setOtpSent(true)
+        toast.success("OTP sent successfully to the recipient's email")
+
+        // Reset OTP input fields
+        setOtpValue(["", "", "", "", "", ""])
+
+        // Focus on the first OTP input field
+        setTimeout(() => {
+          const firstInput = document.getElementById("otp-0")
+          if (firstInput) {
+            firstInput.focus()
+          }
+        }, 500)
+      } else {
+        toast.error(response.data.message || "Failed to send OTP")
+      }
+    } catch (error) {
+      console.error("Error sending OTP:", error)
+      toast.error(error.response?.data?.message || "Failed to send OTP. Please try again.")
+    } finally {
+      setIsGeneratingOtp(false)
+    }
+  }
+
   // Handle OTP verification
-  const verifyOtp = () => {
+  const verifyOtp = async () => {
+    const enteredOtp = otpValue.join("")
+
+    if (enteredOtp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP")
+      return
+    }
+
     setIsVerifying(true)
 
-    // Simulate API call for OTP verification
-    setTimeout(() => {
-      const enteredOtp = otpValue.join("")
-      // In a real app, verify this with your backend
-      // For demo, any 6-digit numeric OTP is considered valid
-      const isValid = enteredOtp.length === 6 && /^\d+$/.test(enteredOtp)
+    try {
+      const response = await AxiosInstance.post("/api/otp/verify", {
+        email: recipientEmail,
+        otp: enteredOtp,
+        ticketId: selectedTicket._id,
+      })
 
-      setIsOtpValid(isValid)
-      setIsVerifying(false)
+      if (response.data.success) {
+        setIsOtpValid(true)
+        setTransferLink(response.data.transferLink)
+        setQrCodeValue(response.data.transferLink)
+        setToken(response.data.transferLink.split("/receive/")[1])
 
-      if (isValid) {
+        // Check if email was sent successfully
+        if (response.data.emailSent) {
+          toast.success("OTP verified successfully and transfer link sent to recipient's email")
+        } else {
+          toast.success("OTP verified successfully")
+        }
+
         setStep(3)
       } else {
-        toast.error("Invalid OTP. Please try again.")
+        toast.error(response.data.message || "Invalid OTP. Please try again.")
       }
-    }, 1500)
+    } catch (error) {
+      console.error("Error verifying OTP:", error)
+      toast.error(error.response?.data?.message || "Invalid OTP. Please try again.")
+    } finally {
+      setIsVerifying(false)
+    }
   }
 
   // Copy transfer link to clipboard
@@ -189,7 +241,7 @@ const TransferTicket = () => {
   }
 
   // Handle form submission for transfer
-  const handleSubmitTransfer = (e) => {
+  const handleSubmitTransfer = async (e) => {
     e.preventDefault()
 
     if (!selectedTicket) {
@@ -204,16 +256,31 @@ const TransferTicket = () => {
 
     setIsTransferring(true)
 
-    // Simulate API call for transfer
-    setTimeout(() => {
-      setIsTransferring(false)
-      setTransferComplete(true)
+    try {
+      // Since the email has already been sent during OTP verification,
+      // we just need to update the ticket status
+      const response = await AxiosInstance.post(`/api/tickets/transfer/complete/${token}`, {
+        ticketId: selectedTicket._id,
+        recipientEmail,
+      })
 
-      // After 3 seconds, redirect to history page
-      setTimeout(() => {
-        navigate("/ticket-history")
-      }, 3000)
-    }, 1500)
+      if (response.data.success) {
+        setTransferComplete(true)
+        toast.success("Ticket transfer completed successfully")
+
+        // After 3 seconds, redirect to history page
+        setTimeout(() => {
+          navigate("/ticket-history")
+        }, 3000)
+      } else {
+        toast.error(response.data.message || "Failed to complete transfer")
+      }
+    } catch (error) {
+      console.error("Error completing transfer:", error)
+      toast.error(error.response?.data?.message || "Failed to complete transfer")
+    } finally {
+      setIsTransferring(false)
+    }
   }
 
   return (
@@ -238,11 +305,7 @@ const TransferTicket = () => {
               >
                 1
               </div>
-              <div
-                className={`ml-2 text-sm ${
-                  step >= 1 ? "text-railway-blue font-medium" : "text-gray-500"
-                }`}
-              >
+              <div className={`ml-2 text-sm ${step >= 1 ? "text-railway-blue font-medium" : "text-gray-500"}`}>
                 Select Ticket
               </div>
             </div>
@@ -258,11 +321,7 @@ const TransferTicket = () => {
               >
                 2
               </div>
-              <div
-                className={`ml-2 text-sm ${
-                  step >= 2 ? "text-railway-blue font-medium" : "text-gray-500"
-                }`}
-              >
+              <div className={`ml-2 text-sm ${step >= 2 ? "text-railway-blue font-medium" : "text-gray-500"}`}>
                 Generate Link
               </div>
             </div>
@@ -278,11 +337,7 @@ const TransferTicket = () => {
               >
                 3
               </div>
-              <div
-                className={`ml-2 text-sm ${
-                  step >= 3 ? "text-railway-blue font-medium" : "text-gray-500"
-                }`}
-              >
+              <div className={`ml-2 text-sm ${step >= 3 ? "text-railway-blue font-medium" : "text-gray-500"}`}>
                 Confirm
               </div>
             </div>
@@ -298,54 +353,60 @@ const TransferTicket = () => {
             </h2>
 
             <div className="space-y-4 mt-4">
-              {availableTickets
-                .filter((ticket) => ticket.status === "active")
-                .map((ticket) => (
-                  <div
-                    key={ticket.id}
-                    className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                      selectedTicket?.id === ticket.id
-                        ? "border-railway-blue bg-railway-lightBlue bg-opacity-50"
-                        : "border-gray-200 hover:border-railway-blue"
-                    }`}
-                    onClick={() => handleSelectTicket(ticket)}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <span className="text-sm font-medium">{ticket.ticketNumber}</span>
-                        <h3 className="font-semibold mt-1">
-                          {ticket.from} → {ticket.to}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {new Date(ticket.departureTime).toLocaleDateString()} at{" "}
-                          {new Date(ticket.departureTime).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                        {ticket.transferLimit && (
-                          <p className="text-xs text-blue-600 mt-1">
-                            {ticket.transferLimit - (ticket.transfers?.length || 0)} transfers remaining
+              {isLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-railway-blue"></div>
+                </div>
+              ) : (
+                availableTickets
+                  .filter((ticket) => ticket.status === "active")
+                  .map((ticket) => (
+                    <div
+                      key={ticket._id}
+                      className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                        selectedTicket?._id === ticket._id
+                          ? "border-railway-blue bg-railway-lightBlue bg-opacity-50"
+                          : "border-gray-200 hover:border-railway-blue"
+                      }`}
+                      onClick={() => handleSelectTicket(ticket)}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <span className="text-sm font-medium">{ticket.ticketNumber}</span>
+                          <h3 className="font-semibold mt-1">
+                            {ticket.from} → {ticket.to}
+                          </h3>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {new Date(ticket.departureTime).toLocaleDateString()} at{" "}
+                            {new Date(ticket.departureTime).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </p>
+                          {ticket.transferLimit && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              {ticket.transferLimit - (ticket.transfers?.length || 0)} transfers remaining
+                            </p>
+                          )}
+                        </div>
+
+                        {selectedTicket?._id === ticket._id && (
+                          <svg
+                            className="h-6 w-6 text-railway-blue"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
                         )}
                       </div>
-
-                      {selectedTicket?.id === ticket.id && (
-                        <svg
-                          className="h-6 w-6 text-railway-blue"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  ))
+              )}
 
-              {availableTickets.filter((ticket) => ticket.status === "active").length === 0 && (
+              {!isLoading && availableTickets.filter((ticket) => ticket.status === "active").length === 0 && (
                 <div className="text-center py-6">
                   <p className="text-gray-500">You don't have any active tickets available for transfer.</p>
                 </div>
@@ -382,8 +443,8 @@ const TransferTicket = () => {
                   <div>
                     <h3 className="font-medium text-yellow-800">Security Information</h3>
                     <p className="text-sm text-yellow-700 mt-1">
-                      A secure one-time link and QR code have been generated for this ticket transfer. This link will
-                      expire in <span className="font-medium">{remainingTime}</span> for security purposes.
+                      A secure one-time link and QR code will be generated for this ticket transfer. This link will
+                      expire in <span className="font-medium">30 minutes</span> for security purposes.
                     </p>
                   </div>
                 </div>
@@ -394,82 +455,39 @@ const TransferTicket = () => {
                 <TicketCard ticket={selectedTicket} />
               </div>
 
-              <div className="mb-6 flex flex-col md:flex-row gap-6">
-                {/* QR Code */}
-                <div className="flex-1 border border-gray-200 rounded-lg p-4 flex flex-col items-center">
-                  <h3 className="font-medium mb-3 text-center">Scan QR Code</h3>
-                  <div className="bg-white p-2 border border-gray-300 rounded-lg mb-3">
-                    {/* Simulated QR code - in a real app, use a QR code library */}
-                    <div className="w-48 h-48 bg-gray-100 flex items-center justify-center">
-                      <QrCode className="h-32 w-32 text-railway-blue" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-500 text-center">
-                    Let the recipient scan this QR code to access the ticket
-                  </p>
-                </div>
-
-                {/* Transfer Link */}
-                <div className="flex-1 border border-gray-200 rounded-lg p-4">
-                  <h3 className="font-medium mb-3">Share Transfer Link</h3>
-                  <div className="relative">
-                    <input 
-                      type="text" 
-                      value={transferLink} 
-                      readOnly 
-                      className="input-field pr-10 bg-gray-50 text-sm" 
-                    />
-                    <button
-                      onClick={copyLinkToClipboard}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-railway-blue hover:text-railway-darkBlue"
-                      aria-label="Copy link"
-                    >
-                      {isLinkCopied ? <CheckCircle2 className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Send this link to the recipient. The link will expire in {remainingTime}.
-                  </p>
-
-                  <div className="mt-4 flex items-center">
-                    <Timer className="h-4 w-4 text-railway-blue mr-2" />
-                    <span className="text-sm font-medium">Expires in: {remainingTime}</span>
-                  </div>
-                </div>
-              </div>
-
+              {/* Email OTP Section */}
               <div className="mb-6 border border-gray-200 rounded-lg p-4">
                 <h3 className="font-medium mb-3 flex items-center">
-                  <Lock className="h-4 w-4 mr-2 text-railway-blue" />
-                  Enter OTP from Recipient
+                  <Mail className="h-4 w-4 mr-2 text-railway-blue" />
+                  Send OTP to Recipient
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  Ask the recipient to share the OTP they received after accessing the transfer link.
+                  Enter the recipient's email address to send them a verification OTP.
                 </p>
 
-                {/* OTP Inputs */}
-                <div className="flex justify-center gap-2 mb-4">
-                  {otpValue.map((digit, index) => (
-                    <input
-                      key={index}
-                      id={`otp-${index}`}
-                      type="text"
-                      maxLength="1"
-                      value={digit}
-                      onChange={(e) => handleOtpChange(index, e.target.value)}
-                      className="w-12 h-12 text-center text-xl font-bold border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-railway-blue"
-                    />
-                  ))}
+                <div className="mb-4">
+                  <label htmlFor="recipientEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                    Recipient's Email Address
+                  </label>
+                  <input
+                    id="recipientEmail"
+                    type="email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    placeholder="email@example.com"
+                    className="input-field"
+                    disabled={otpSent}
+                  />
                 </div>
 
                 <button
-                  onClick={verifyOtp}
-                  disabled={otpValue.join("").length !== 6 || isVerifying}
-                  className={`w-full btn-primary ${
-                    otpValue.join("").length !== 6 ? "opacity-50 cursor-not-allowed" : ""
+                  onClick={generateAndSendOtp}
+                  disabled={!recipientEmail || isGeneratingOtp || otpSent}
+                  className={`w-full btn-primary mb-4 ${
+                    !recipientEmail || isGeneratingOtp || otpSent ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
-                  {isVerifying ? (
+                  {isGeneratingOtp ? (
                     <div className="flex items-center justify-center">
                       <svg
                         className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
@@ -491,12 +509,87 @@ const TransferTicket = () => {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Verifying...
+                      Sending OTP...
+                    </div>
+                  ) : otpSent ? (
+                    <div className="flex items-center justify-center">
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      OTP Sent
                     </div>
                   ) : (
-                    "Verify OTP"
+                    "Send OTP to Recipient"
                   )}
                 </button>
+
+                {otpSent && (
+                  <>
+                    <div className="p-3 bg-green-50 border border-green-100 rounded-lg mb-4">
+                      <p className="text-sm text-green-800 flex items-start">
+                        <CheckCircle2 className="h-4 w-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                        <span>
+                          OTP has been sent to the recipient's email. Ask them to check their inbox and provide the
+                          6-digit code.
+                        </span>
+                      </p>
+                    </div>
+
+                    <h3 className="font-medium mb-3 flex items-center">
+                      <Lock className="h-4 w-4 mr-2 text-railway-blue" />
+                      Enter OTP from Recipient
+                    </h3>
+
+                    {/* OTP Inputs */}
+                    <div className="flex justify-center gap-2 mb-4">
+                      {otpValue.map((digit, index) => (
+                        <input
+                          key={index}
+                          id={`otp-${index}`}
+                          type="text"
+                          maxLength="1"
+                          value={digit}
+                          onChange={(e) => handleOtpChange(index, e.target.value)}
+                          className="w-12 h-12 text-center text-xl font-bold border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-railway-blue"
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={verifyOtp}
+                      disabled={otpValue.join("").length !== 6 || isVerifying}
+                      className={`w-full btn-primary ${
+                        otpValue.join("").length !== 6 ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {isVerifying ? (
+                        <div className="flex items-center justify-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          Verifying...
+                        </div>
+                      ) : (
+                        "Verify OTP"
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
 
               <div className="mt-4">
@@ -536,7 +629,7 @@ const TransferTicket = () => {
                   <div>
                     <h3 className="font-medium text-green-800">OTP Verified Successfully</h3>
                     <p className="text-sm text-green-700 mt-1">
-                      The OTP has been verified. You can now complete the ticket transfer.
+                      The OTP has been verified and a transfer link has been sent to {recipientEmail}.
                     </p>
                   </div>
                 </div>
@@ -555,6 +648,41 @@ const TransferTicket = () => {
               <div className="mb-6">
                 <h3 className="font-medium mb-2">Ticket Details:</h3>
                 <TicketCard ticket={selectedTicket} />
+              </div>
+
+              <div className="mb-6">
+                <h3 className="font-medium mb-2">Recipient Email:</h3>
+                <p className="text-sm bg-gray-50 p-3 rounded-md border border-gray-200">{recipientEmail}</p>
+              </div>
+
+              <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 mb-6">
+                <div className="flex items-start">
+                  <Mail className="h-5 w-5 text-blue-600 mr-2 mt-0.5" />
+                  <div>
+                    <h3 className="font-medium text-blue-800">Transfer Link Sent</h3>
+                    <p className="text-sm text-blue-700 mt-1">
+                      A transfer link has been sent to the recipient's email. They can use this link to claim the
+                      ticket.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="font-medium mb-2">Transfer Link:</h3>
+                <div className="relative">
+                  <input type="text" value={transferLink} readOnly className="input-field pr-10 bg-gray-50 text-sm" />
+                  <button
+                    onClick={copyLinkToClipboard}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-railway-blue hover:text-railway-darkBlue"
+                    aria-label="Copy link"
+                  >
+                    {isLinkCopied ? <CheckCircle2 className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  This link has been sent to the recipient's email. You can also copy it manually if needed.
+                </p>
               </div>
 
               {transferReason && (
@@ -583,9 +711,9 @@ const TransferTicket = () => {
               <button onClick={() => setStep(2)} className="btn-secondary">
                 Back
               </button>
-              <button 
-                onClick={handleSubmitTransfer} 
-                className="btn-primary" 
+              <button
+                onClick={handleSubmitTransfer}
+                className="btn-primary"
                 disabled={!confirmChecked || isTransferring}
               >
                 {isTransferring ? (

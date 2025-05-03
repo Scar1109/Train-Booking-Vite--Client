@@ -1,158 +1,156 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import AxiosInstance from "../../AxiosInstance"; // import your Axios instance
-import TicketCard from "../../components/TicketCard";
-import Navbar from "../../components/Navbar"; // Ensure Navbar is imported
+"use client"
 
-const TicketShareComponent = () => {
-  const [tickets, setTickets] = useState([]);
-  const navigate = useNavigate();
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
+import Navbar from "../../components/NavBar"
+import TicketCard from "../../components/TicketCard"
+import AxiosInstance from "../../AxiosInstance"
+import { Ticket, Search } from "lucide-react"
 
-  // Fetch from your bookings endpoint
+const TicketList = () => {
+  const [tickets, setTickets] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [filter, setFilter] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("")
+  const navigate = useNavigate()
+
   useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const response = await AxiosInstance.get("/api/bookings/getAll");
-        if (response.data.success) {
-          const mappedTickets = response.data.bookings.map((booking) => {
-            return {
-              id: booking._id,
-              ticketNumber: booking.ticketId,
-              from: "Colombo Fort",
-              to: "Kandy", 
-              departureTime: booking.bookingTime,
-              trainName: "Udarata Menike",         
-              coach: "A",                         
-              seat: "15",                          
-              passengerName: "John Perera",
-              status: booking.isRefunded ? "used" : "active",
-              qrCode: booking.ticketId,
-              transfers: [],
-            };
-          });
+    fetchTickets()
+  }, [])
 
-          setTickets(mappedTickets);
-        }
-      } catch (error) {
-        console.error("Error fetching bookings:", error);
-      }
-    };
+  const fetchTickets = async () => {
+    try {
+    setIsLoading(true);
+    const response = await AxiosInstance.get("/api/tickets");
+    if (response.data.success) {
+      setTickets(response.data.tickets);  // Update tickets state with the fetched tickets
+    } else {
+      toast.error("Failed to fetch tickets");
+    }
+  } catch (error) {
+    console.error("Error fetching tickets:", error);
+    toast.error(error.response?.data?.message || "Failed to fetch tickets");
+  } finally {
+    setIsLoading(false);
+  }
+  }
 
-    fetchTickets();
-  }, []);
-
-  // Called when user clicks 'Transfer' button
   const handleTransfer = (ticket) => {
-    navigate("/transfer", { state: { ticket } });
-  };
+    navigate("/transfer", { state: { ticket } })
+  }
+
+  // Filter tickets based on status and search term
+  const filteredTickets = tickets.filter((ticket) => {
+    const matchesFilter = filter === "all" || ticket.status === filter
+    const matchesSearch =
+      searchTerm === "" ||
+      ticket.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.to.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.trainName.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchesFilter && matchesSearch
+  })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-railway-gray">
       <Navbar />
-
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="page-container max-w-6xl">
         <header className="mb-8 text-center">
-          <div className="max-w-3xl mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Smart Railway Ticketing System</h1>
-            <p className="text-gray-600 mb-6 animate-fade-in">
-              Secure, transparent, and fraud-resistant ticket management
-            </p>
-          </div>
-
-          <div className="relative mt-8 mb-12 overflow-hidden rounded-xl bg-blue-600 py-10 px-8 shadow-lg max-w-4xl mx-auto">
-            {/* background pattern */}
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxkZWZzPjxwYXR0ZXJuIGlkPSJwYXR0ZXJuIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHBhdHRlcm5UcmFuc2Zvcm09InJvdGF0ZSg0NSkiPjxsaW5lIHgxPSIwIiB5PSIwIiB4Mj0iMCIgeTI9IjQwIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLW9wYWNpdHk9IjAuMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNwYXR0ZXJuKSIvPjwvc3ZnPg==')] opacity-10"></div>
-            <div className="relative">
-              <div className="flex flex-col md:flex-row items-center">
-                <div className="flex-1 text-white text-left">
-                  <h2 className="text-2xl font-semibold mb-2">Ticket Transfer System</h2>
-                  <p className="mb-4">
-                    Transfer your tickets to friends or family securely without the risk of fraud or duplication.
-                  </p>
-                  <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                    <button
-                      onClick={() => navigate("/transfer")}
-                      className="inline-flex items-center bg-white text-blue-600 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all"
-                    >
-                      Transfer a Ticket
-                      <svg
-                        className="ml-2 h-4 w-4"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => navigate("/receive/tick254")}
-                      className="inline-flex items-center bg-blue-500 text-white border border-white border-opacity-30 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all"
-                    >
-                      Receive a Ticket
-                      <svg
-                        className="ml-2 h-4 w-4"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div className="md:ml-8 mt-6 md:mt-0">
-                  <div className="h-20 w-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                    <svg
-                      className="h-10 w-10 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="1.5"
-                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <h1 className="page-title">My Tickets</h1>
+          <p className="text-gray-600 animate-fade-in">View and manage your train tickets</p>
         </header>
 
-        <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900">Your Tickets</h2>
-            <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium">
-              {tickets.filter((t) => t.status === "active").length} Active Tickets
-            </div>
+        {/* Filters and Search */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
+          <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm p-1">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                filter === "all" ? "bg-railway-blue text-white" : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilter("active")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                filter === "active" ? "bg-railway-blue text-white" : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => setFilter("transferred")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                filter === "transferred" ? "bg-railway-blue text-white" : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Transferred
+            </button>
+            <button
+              onClick={() => setFilter("used")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                filter === "used" ? "bg-railway-blue text-white" : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              Used
+            </button>
           </div>
 
+          <div className="relative w-full sm:w-auto">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search tickets..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full sm:w-64 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-railway-blue focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-railway-blue"></div>
+          </div>
+        ) : filteredTickets.length > 0 ? (
           <div className="space-y-6">
-            {tickets.map((ticket) => (
+            {filteredTickets.map((ticket) => (
               <TicketCard
-                key={ticket.id}
+                key={ticket._id}
                 ticket={ticket}
                 showTransferButton={ticket.status === "active"}
                 onTransfer={handleTransfer}
               />
             ))}
-
-            {tickets.length === 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                <p className="text-gray-500">You don't have any tickets yet.</p>
-              </div>
-            )}
           </div>
-        </section>
+        ) : (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <div className="flex justify-center mb-4">
+              <Ticket className="h-16 w-16 text-gray-300" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">No tickets found</h3>
+            <p className="text-gray-500 mb-6">
+              {filter !== "all"
+                ? `You don't have any ${filter} tickets.`
+                : searchTerm
+                  ? "No tickets match your search criteria."
+                  : "You haven't booked any tickets yet."}
+            </p>
+            <button
+              onClick={() => navigate("/trains")}
+              className="bg-railway-blue text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Book a Ticket
+            </button>
+          </div>
+        )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default TicketShareComponent;
+export default TicketList

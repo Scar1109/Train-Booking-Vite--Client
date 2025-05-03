@@ -3,33 +3,15 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import Navbar from "../../components/Navbar"
+import Navbar from "../../components/NavBar"
 import TicketCard from "../../components/TicketCard"
-import { CheckCircle2, AlertTriangle, Lock, RefreshCw, User, CreditCard, Info, Shield } from "lucide-react"
+import { CheckCircle2, AlertTriangle, User, Info, Shield } from "lucide-react"
+import AxiosInstance from "../../AxiosInstance"
 
 // Constants for configuration
 const OTP_LENGTH = 6
 const MAX_ID_LENGTH = 10
 const TRANSFER_TIMEOUT = 3000
-const API_DELAY = 1500
-
-// Dummy ticket data for demonstration
-const dummyTicket = {
-  id: 1,
-  ticketNumber: "SR-12345",
-  from: "Colombo Fort",
-  to: "Kandy",
-  departureTime: "2023-10-15T08:30:00",
-  trainName: "Udarata Menike",
-  coach: "A",
-  seat: "15",
-  passengerName: "John Perera",
-  status: "active",
-  qrCode: "SR-12345-COLOMBO-KANDY-20231015",
-  transfers: [],
-  transferLimit: 3,
-  price: 750,
-}
 
 const ReceiveTicket = () => {
   const { token } = useParams()
@@ -42,7 +24,6 @@ const ReceiveTicket = () => {
     isLoading: true,
     isValid: false,
     ticket: null,
-    otp: "",
     isAccepting: false,
     transferComplete: false,
     receiverName: "",
@@ -57,47 +38,41 @@ const ReceiveTicket = () => {
     formTouched: false,
   })
 
-  // Generate a 6-digit OTP
-  const generateOTP = useCallback(() => {
-    return Math.floor(100000 + Math.random() * 900000)
-      .toString()
-      .padStart(OTP_LENGTH, "0")
-  }, [])
-
   // Validate the transfer token
   const validateToken = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }))
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, API_DELAY))
 
       if (!token || token.length === 0) {
         throw new Error("Invalid or missing transfer token")
       }
 
-      const newOtp = generateOTP()
-      setState((prev) => ({
-        ...prev,
-        isValid: true,
-        ticket: dummyTicket,
-        otp: newOtp,
-      }))
+      const response = await AxiosInstance.get(`/api/tickets/transfer/validate/${token}`)
 
-      toast.success(`Your OTP is: ${newOtp}`, {
-        duration: 10000,
-        description: "Share this with the sender only",
-      })
+      if (response.data.success) {
+        setState((prev) => ({
+          ...prev,
+          isValid: true,
+          ticket: response.data.ticket,
+        }))
+
+        toast.success("Transfer link is valid", {
+          description: "Please complete your details to receive the ticket",
+        })
+      } else {
+        throw new Error(response.data.message || "Invalid transfer link")
+      }
     } catch (error) {
       setState((prev) => ({
         ...prev,
         isValid: false,
-        error: error.message,
+        error: error.response?.data?.message || error.message,
       }))
-      toast.error(error.message || "Failed to validate transfer link")
+      toast.error(error.response?.data?.message || error.message || "Failed to validate transfer link")
     } finally {
       setState((prev) => ({ ...prev, isLoading: false }))
     }
-  }, [token, generateOTP])
+  }, [token])
 
   // Run token validation on component mount
   useEffect(() => {
@@ -189,40 +164,31 @@ const ReceiveTicket = () => {
     setState((prev) => ({ ...prev, isAccepting: true }))
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, API_DELAY))
-
-      const updatedTicket = {
-        ...state.ticket,
-        passengerName: state.receiverName.trim(),
-        passengerId: state.receiverIdNumber,
-        transferDate: new Date().toISOString(),
-      }
-
-      setState((prev) => ({
-        ...prev,
-        ticket: updatedTicket,
-        transferComplete: true,
-      }))
-
-      toast.success("Ticket transfer completed successfully!", {
-        description: "Redirecting to your tickets...",
+      const response = await AxiosInstance.post(`/api/tickets/transfer/complete/${token}`, {
+        receiverName: state.receiverName.trim(),
+        receiverIdNumber: state.receiverIdNumber,
       })
 
-      setTimeout(() => navigate("/TicketList"), TRANSFER_TIMEOUT)
+      if (response.data.success) {
+        setState((prev) => ({
+          ...prev,
+          ticket: response.data.ticket,
+          transferComplete: true,
+        }))
+
+        toast.success("Ticket transfer completed successfully!", {
+          description: "Redirecting to your tickets...",
+        })
+
+        setTimeout(() => navigate("/TicketList"), TRANSFER_TIMEOUT)
+      } else {
+        toast.error(response.data.message || "Failed to process transfer. Please try again.")
+        setState((prev) => ({ ...prev, isAccepting: false }))
+      }
     } catch (error) {
-      toast.error("Failed to process transfer. Please try again.")
+      toast.error(error.response?.data?.message || "Failed to process transfer. Please try again.")
       setState((prev) => ({ ...prev, isAccepting: false }))
     }
-  }
-
-  // Regenerate OTP on user request
-  const handleRegenerateOTP = () => {
-    const newOtp = generateOTP()
-    setState((prev) => ({ ...prev, otp: newOtp }))
-    toast.success(`New OTP generated: ${newOtp}`, {
-      duration: 10000,
-    })
   }
 
   // Render loading state
@@ -283,8 +249,8 @@ const ReceiveTicket = () => {
                   <div>
                     <h3 className="font-medium text-yellow-800">Security Notice</h3>
                     <p className="text-sm text-yellow-700 mt-1">
-                      Share the OTP only with the sender to verify this transfer securely. Your personal details will be
-                      associated with this ticket.
+                      Your personal details will be associated with this ticket. Please ensure all information is
+                      accurate.
                     </p>
                   </div>
                 </div>
@@ -311,9 +277,6 @@ const ReceiveTicket = () => {
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    
-                      </div>
                       <input
                         ref={nameInputRef}
                         type="text"
@@ -321,7 +284,7 @@ const ReceiveTicket = () => {
                         onChange={handleInputChange("receiverName")}
                         onBlur={() => setValidation((prev) => ({ ...prev, formTouched: true }))}
                         placeholder="Enter your full name"
-                        className={`input-field pl-10 w-full ${validation.formTouched && validation.nameError ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
+                        className={`input-field pl-3 w-full ${validation.formTouched && validation.nameError ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
                         maxLength={50}
                         disabled={state.isAccepting}
                         aria-invalid={validation.nameError ? "true" : "false"}
@@ -342,9 +305,6 @@ const ReceiveTicket = () => {
                       ID Number <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        
-                      </div>
                       <input
                         ref={idInputRef}
                         type="text"
@@ -352,7 +312,7 @@ const ReceiveTicket = () => {
                         onChange={handleInputChange("receiverIdNumber")}
                         onBlur={() => setValidation((prev) => ({ ...prev, formTouched: true }))}
                         placeholder={`Enter ${MAX_ID_LENGTH}-digit ID`}
-                        className={`input-field pl-10 w-full ${validation.formTouched && validation.idError ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
+                        className={`input-field pl-3 w-full ${validation.formTouched && validation.idError ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
                         maxLength={MAX_ID_LENGTH}
                         disabled={state.isAccepting}
                         aria-invalid={validation.idError ? "true" : "false"}
@@ -367,34 +327,6 @@ const ReceiveTicket = () => {
                     )}
                     <p className="mt-1 text-xs text-gray-500">Must be a {MAX_ID_LENGTH}-digit national ID number</p>
                   </div>
-                </div>
-              </section>
-
-              {/* OTP Section - Enhanced UI */}
-              <section className="mb-6 border border-gray-200 rounded-lg p-5 bg-blue-50">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-medium flex items-center text-railway-blue">
-                    <Lock className="h-5 w-5 mr-2" />
-                    Your OTP Code
-                  </h3>
-                  <button
-                    onClick={handleRegenerateOTP}
-                    className="text-railway-blue hover:text-blue-700 flex items-center text-sm bg-white px-3 py-1 rounded-full shadow-sm transition-all hover:shadow"
-                    disabled={state.isAccepting}
-                  >
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    Regenerate
-                  </button>
-                </div>
-                <div className="bg-white p-5 rounded-lg border border-blue-200 text-center shadow-sm">
-                  <span className="text-3xl tracking-widest font-mono font-bold text-railway-blue">{state.otp}</span>
-                </div>
-                <div className="flex items-start mt-3">
-                  <Info className="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs text-blue-700">
-                    Share this OTP with the sender to complete the transfer. This code is valid for this transfer only
-                    and will expire after use.
-                  </p>
                 </div>
               </section>
 
