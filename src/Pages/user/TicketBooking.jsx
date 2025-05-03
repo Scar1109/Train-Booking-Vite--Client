@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import AxiosInstance from "../../AxiosInstance";
 import { Table, Button, Tabs } from "antd";
 
 const TicketBooking = () => {
@@ -13,7 +15,6 @@ const TicketBooking = () => {
 
     const location = useLocation();
     const navigate = useNavigate();
-    const isReturnTrip = location.state?.isReturn || false;
     const [currentStep, setCurrentStep] = useState(
         location.state?.startStep || 2
     ); // Default to Check Availability step
@@ -23,7 +24,30 @@ const TicketBooking = () => {
     const [idType, setIdType] = useState("NIC");
     const [showAllPassengers, setShowAllPassengers] = useState(false);
     const [selectedTrain, setSelectedTrain] = useState(null);
+    const [selectedClass, setSelectedClass] = useState({});
+    const [isReturnTrip, setIsReturnTrip] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [limit, setLimit] = useState(10);
+    const [trainData, setTrainData] = useState([]);
+    const [totalPages, setTotalPages] = useState(1);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Class color mapping
+    const classColors = {
+        "First Class": "bg-purple-600",
+        "First Class Observation": "bg-purple-700",
+        "Air Conditioned": "bg-gray-700",
+        "Air Conditioned Saloon": "bg-gray-800",
+        "Second Class": "bg-green-500",
+        "Second Class Reserved": "bg-green-600",
+        "Second Class Observation": "bg-green-700",
+        "Third Class": "bg-blue-600",
+        "Third Class Reserved": "bg-blue-700",
+        "Third Class Sleeper": "bg-blue-800",
+        // Default color for any other class
+        default: "bg-gray-500",
+    };
 
     const goToStep = (step) => {
         if (step === 1) {
@@ -46,6 +70,188 @@ const TicketBooking = () => {
             navigate("/");
         }
     };
+
+    // Function to get color for a class type
+    const getClassColor = (classType) => {
+        // Check if the class type exactly matches one of our defined colors
+        if (classColors[classType]) {
+            return classColors[classType];
+        }
+
+        // If not an exact match, check if it contains any of our class keywords
+        for (const [key, color] of Object.entries(classColors)) {
+            if (
+                key !== "default" &&
+                classType.toLowerCase().includes(key.toLowerCase())
+            ) {
+                return color;
+            }
+        }
+
+        // Default color if no match found
+        return classColors.default;
+    };
+
+    // Function to fetch trains from API
+    const fetchTrains = async (page = 1, limit = 10) => {
+        try {
+            setLoading(true);
+            const response = await AxiosInstance.get(
+                `/api/trains?page=${page}&limit=${limit}`
+            );
+
+            if (response.data.success) {
+                // Map API data to the format expected by the UI
+                const formattedTrains = response.data.trains.map((train) => {
+                    // Format all classes for display
+                    const formattedClasses = train.classes.map((classItem) => {
+                        return {
+                            id:
+                                classItem._id ||
+                                `class-${Math.random()
+                                    .toString(36)
+                                    .substr(2, 9)}`,
+                            type: classItem.type || "N/A",
+                            color: getClassColor(classItem.type || ""),
+                            capacity: classItem.capacity || 0,
+                            available: classItem.available || 0,
+                            price: `LKR ${
+                                classItem.price?.toLocaleString() || 0
+                            }`,
+                            priceValue: classItem.price || 0,
+                        };
+                    });
+
+                    return {
+                        id: train._id,
+                        name: train.name,
+                        route: `${train.route.from} - ${train.route.to}`,
+                        fullRoute: `${train.route.from} - ${train.route.to}`,
+                        departs: train.departureTime,
+                        arrives: train.arrivalTime,
+                        classes: formattedClasses,
+                    };
+                });
+
+                setTrainData(formattedTrains);
+
+                // Calculate total pages
+                const total = response.data.pagination.total;
+                const totalPages = Math.ceil(total / limit);
+                setTotalPages(totalPages);
+            } else {
+                setError(
+                    "Failed to fetch train data: " +
+                        (response.data?.message || "Unknown error")
+                );
+            }
+        } catch (err) {
+            console.error("Error fetching trains:", err);
+            setError("Failed to fetch train data. Please try again later.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch trains when component mounts or when page/limit changes
+    useEffect(() => {
+        fetchTrains(currentPage, limit);
+    }, [currentPage, limit]);
+
+    const handleTrainSelect = (trainId, classId = null) => {
+        if (trainId === selectedTrain && !classId) {
+            // If clicking the same train and no specific class is selected, deselect
+            setSelectedTrain(null);
+            setSelectedClass({});
+        } else {
+            // Select the train
+            setSelectedTrain(trainId);
+
+            // If a specific class was clicked, select it
+            if (classId) {
+                setSelectedClass({
+                    trainId,
+                    classId,
+                });
+            } else if (trainId !== selectedTrain) {
+                // If selecting a new train without specifying class, clear class selection
+                setSelectedClass({});
+            }
+        }
+    };
+
+    const handleClassSelect = (trainId, classId) => {
+        setSelectedTrain(trainId);
+        setSelectedClass({
+            trainId,
+            classId,
+        });
+
+        // Stop event propagation to prevent the train row click handler from firing
+        event.stopPropagation();
+    };
+
+    const handleContinue = () => {
+        if (selectedTrain) {
+            const selectedTrainData = trainData.find(
+                (train) => train.id === selectedTrain
+            );
+            const selectedClassData = selectedClass.classId
+                ? selectedTrainData?.classes.find(
+                    (c) => c.id === selectedClass.classId
+                )
+                : selectedTrainData?.classes[0];
+
+            console.log("Selected train:", selectedTrainData?.name);
+            console.log("Selected class:", selectedClassData?.type);
+
+            // Navigate to the next step
+            goToNextStep();
+        }
+    };
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
+        }
+    };
+
+    // Function to retry API fetch
+    const handleRetry = () => {
+        setError(null);
+        fetchTrains(currentPage, limit);
+    };
+
+    // Toggle expanded view for a train to show all classes
+    const toggleExpandTrain = (trainId) => {
+        setExpandedTrain(expandedTrain === trainId ? null : trainId);
+    };
+
+    // Function to select a specific class for a train
+    const selectTrainClass = (trainId, classType) => {
+        // Find the train
+        const train = trainData.find((t) => t.id === trainId);
+        if (!train) return;
+
+        // Update the primary class for this train
+        const selectedClass = train.classes.find((c) => c.type === classType);
+        if (!selectedClass) return;
+
+        // Create a new array with the updated train
+        const updatedTrainData = trainData.map((t) => {
+            if (t.id === trainId) {
+                return {
+                    ...t,
+                    primaryClass: selectedClass,
+                };
+            }
+            return t;
+        });
+
+        setTrainData(updatedTrainData);
+        setSelectedTrain(trainId);
+    };
+
     const [passengers, setPassengers] = useState([
         {
             id: 1,
@@ -129,103 +335,6 @@ const TicketBooking = () => {
             totalPrice: 6300,
         },
     };
-    // Train Data
-    const trainData = [
-        {
-            id: "1",
-            name: "1007 InterCity Express",
-            route: "Colombo Fort - Badulla",
-            fullRoute: "Colombo Fort - Badulla 09:45 - 19:25",
-            departs: "09:45",
-            arrives: "19:20",
-            class: "Observation Saloon",
-            classColor: "bg-gray-500",
-            seats: 44,
-            available: 3,
-            price: "LKR 3,000.00",
-        },
-        {
-            id: "2",
-            name: "1015 Udarata Menike",
-            route: "Colombo Fort - Badulla",
-            fullRoute: "Colombo Fort - Badulla 08:30 - 18:32",
-            departs: "08:30",
-            arrives: "17:51",
-            class: "Third Class Reserved Seats",
-            classColor: "bg-blue-900",
-            seats: 72,
-            available: 13,
-            price: "LKR 1,500.00",
-        },
-        {
-            id: "3",
-            name: "1045 Night Mail",
-            route: "Colombo Fort - Badulla",
-            fullRoute: "Colombo Fort - Badulla 20:30 - 08:07",
-            departs: "20:30",
-            arrives: "05:37",
-            class: "Second Class Sleeperetts",
-            classColor: "bg-blue-500",
-            seats: 80,
-            available: 12,
-            price: "LKR 2,000.00",
-        },
-    ];
-
-    const handleTrainSelect = (trainId) => {
-        setSelectedTrain(trainId === selectedTrain ? null : trainId);
-    };
-
-    const handleContinue = () => {
-        if (selectedTrain) {
-            console.log("Selected train:", selectedTrain);
-            // Add your navigation logic here
-        }
-    };
-
-    const columns = [
-        {
-            title: "Train Name",
-            dataIndex: "name",
-            key: "name",
-        },
-        {
-            title: "Departs",
-            dataIndex: "departs",
-            key: "departs",
-        },
-        {
-            title: "Arrives",
-            dataIndex: "arrives",
-            key: "arrives",
-        },
-        {
-            title: "Class",
-            key: "class",
-            render: (_, record) => (
-                <div className="flex flex-col space-y-1">
-                    {record.class.map((c, index) => (
-                        <span
-                            key={index}
-                            className="bg-blue-500 text-white px-2 py-1 rounded text-xs"
-                        >
-                            {c.type} ({c.seats})
-                        </span>
-                    ))}
-                </div>
-            ),
-        },
-        {
-            title: "Available",
-            dataIndex: "available",
-            key: "available",
-        },
-        {
-            title: "Price",
-            dataIndex: "price",
-            key: "price",
-        },
-    ];
 
     return (
         <div className="w-full max-w-6xl mx-auto mt-10">
@@ -365,7 +474,8 @@ const TicketBooking = () => {
                                         <span>Badulla</span>
                                     </div>
                                     <div className="text-gray-600">
-                                        Date - 2025-05-23
+                                        Date -{" "}
+                                        {new Date().toISOString().split("T")[0]}
                                     </div>
 
                                     <div className="flex items-center mt-3 text-blue-600">
@@ -408,196 +518,268 @@ const TicketBooking = () => {
                             </div>
                         </div>
 
-                        {/* Train Table */}
-                        <div className="overflow-x-auto border border-gray-200 rounded-md">
-                            {/* Table Header */}
-                            <div className="min-w-full">
-                                <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-6 py-3 px-4">
-                                    <div className="flex items-center text-sm font-medium text-gray-700">
-                                        Train Name
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-4 w-4 ml-1"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <div className="flex items-center text-sm font-medium text-gray-700">
-                                        Departs
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-4 w-4 ml-1 text-gray-400"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <div className="flex items-center text-sm font-medium text-gray-700">
-                                        Arrives
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-4 w-4 ml-1 text-gray-400"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <div className="flex items-center text-sm font-medium text-gray-700">
-                                        Class
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-4 w-4 ml-1 text-gray-400"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <div className="flex items-center text-sm font-medium text-gray-700">
-                                        Available
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-4 w-4 ml-1 text-gray-400"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <div className="flex items-center text-sm font-medium text-gray-700">
-                                        Price
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-4 w-4 ml-1 text-gray-400"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                                            />
-                                        </svg>
-                                    </div>
-                                </div>
+                        {/* Loading and Error States */}
+                        {loading && (
+                            <div className="flex justify-center items-center py-10">
+                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                            </div>
+                        )}
 
-                                {/* Table Body */}
-                                <div className="divide-y divide-gray-200">
-                                    {trainData.map((train) => (
-                                        <div
-                                            key={train.id}
-                                            className={`grid grid-cols-6 py-4 px-4 cursor-pointer hover:bg-gray-50 ${
-                                                selectedTrain === train.id
-                                                    ? "bg-blue-50"
-                                                    : ""
-                                            }`}
-                                            onClick={() =>
-                                                handleTrainSelect(train.id)
-                                            }
-                                        >
-                                            <div>
-                                                <div className="font-medium">
-                                                    {train.name}
-                                                </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {train.fullRoute}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center">
-                                                {train.departs}
-                                            </div>
-                                            <div className="flex items-center">
-                                                {train.arrives}
-                                            </div>
-                                            <div className="flex items-center">
-                                                <div
-                                                    className={`${train.classColor} text-white px-3 py-1 rounded-md text-sm flex items-center`}
-                                                >
-                                                    <span>{train.class}</span>
-                                                    <span className="ml-2 bg-white text-gray-800 rounded px-1.5 py-0.5 text-xs">
-                                                        {train.seats}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center">
-                                                {train.available}
-                                            </div>
-                                            <div className="flex items-center font-medium">
-                                                {train.price}
-                                            </div>
-                                        </div>
-                                    ))}
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <p className="font-medium">
+                                            Error loading train data
+                                        </p>
+                                        <p className="text-sm">{error}</p>
+                                    </div>
+                                    <button
+                                        onClick={handleRetry}
+                                        className="bg-red-100 hover:bg-red-200 text-red-800 font-medium py-1 px-3 rounded text-sm"
+                                    >
+                                        Retry
+                                    </button>
                                 </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Train Table */}
+                        {!loading && !error && (
+                            <div className="overflow-x-auto border border-gray-200 rounded-md">
+                                {/* Table Header */}
+                                <div className="min-w-full">
+                                    <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-5 py-3 px-4">
+                                        <div className="flex items-center text-sm font-medium text-gray-700">
+                                            Train Name
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-4 w-4 ml-1"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <div className="flex items-center text-sm font-medium text-gray-700">
+                                            Departs
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-4 w-4 ml-1 text-gray-400"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <div className="flex items-center text-sm font-medium text-gray-700">
+                                            Arrives
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-4 w-4 ml-1 text-gray-400"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <div className="flex items-center text-sm font-medium text-gray-700">
+                                            Class & Seats
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-4 w-4 ml-1 text-gray-400"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <div className="flex items-center text-sm font-medium text-gray-700">
+                                            Price
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-4 w-4 ml-1 text-gray-400"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                                />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    {/* Table Body */}
+                                    <div className="divide-y divide-gray-200">
+                                        {trainData.length > 0 ? (
+                                            trainData.map((train) => (
+                                                <div
+                                                    key={train.id}
+                                                    className={`grid grid-cols-5 py-4 px-4 cursor-pointer hover:bg-gray-50 ${
+                                                        selectedTrain ===
+                                                        train.id
+                                                            ? "bg-blue-50"
+                                                            : ""
+                                                    }`}
+                                                    onClick={() =>
+                                                        handleTrainSelect(
+                                                            train.id
+                                                        )
+                                                    }
+                                                >
+                                                    <div>
+                                                        <div className="font-medium">
+                                                            {train.name}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500">
+                                                            {train.fullRoute}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        {train.departs}
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        {train.arrives}
+                                                    </div>
+                                                    <div className="flex flex-col space-y-2">
+                                                        {train.classes.map(
+                                                            (classItem) => (
+                                                                <div
+                                                                    key={
+                                                                        classItem.id
+                                                                    }
+                                                                    className="flex items-center justify-between w-full"
+                                                                >
+                                                                    <div
+                                                                        className={`${classItem.color} text-white px-3 py-1.5 rounded-md text-sm flex-grow flex justify-between items-center`}
+                                                                    >
+                                                                        <span>
+                                                                            {
+                                                                                classItem.type
+                                                                            }
+                                                                        </span>
+                                                                        <span className="ml-2 bg-white text-gray-800 rounded px-2.5 py-0.5 text-sm">
+                                                                            {
+                                                                                classItem.available
+                                                                            }{" "}
+                                                                            seats
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-col space-y-2">
+                                                        {train.classes.map(
+                                                            (classItem) => (
+                                                                <div
+                                                                    key={
+                                                                        classItem.id
+                                                                    }
+                                                                    className="flex items-center h-[34px] px-1"
+                                                                    onClick={(
+                                                                        e
+                                                                    ) =>
+                                                                        handleClassSelect(
+                                                                            e
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <span className="font-medium">
+                                                                        {
+                                                                            classItem.price
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="py-8 text-center text-gray-500">
+                                                No trains available for this
+                                                route
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Pagination */}
-                        <div className="flex justify-end mt-4">
-                            <button
-                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 mr-2 hover:bg-gray-50"
-                                onClick={() =>
-                                    setCurrentPage(Math.max(1, currentPage - 1))
-                                }
-                                disabled={currentPage === 1}
-                            >
-                                Previous
-                            </button>
-                            <button
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md mr-2"
-                                onClick={() => setCurrentPage(1)}
-                            >
-                                1
-                            </button>
-                            <button
-                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                                onClick={() =>
-                                    setCurrentPage(Math.min(2, currentPage + 1))
-                                }
-                                disabled={currentPage === 2}
-                            >
-                                Next
-                            </button>
-                        </div>
+                        {!loading && !error && trainData.length > 0 && (
+                            <div className="flex justify-end mt-4">
+                                <button
+                                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 mr-2 hover:bg-gray-50"
+                                    onClick={() =>
+                                        handlePageChange(currentPage - 1)
+                                    }
+                                    disabled={currentPage === 1}
+                                >
+                                    Previous
+                                </button>
+                                {[...Array(totalPages).keys()].map((page) => (
+                                    <button
+                                        key={page + 1}
+                                        className={`px-4 py-2 mr-2 ${
+                                            currentPage === page + 1
+                                                ? "bg-blue-600 text-white"
+                                                : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                        } rounded-md`}
+                                        onClick={() =>
+                                            handlePageChange(page + 1)
+                                        }
+                                    >
+                                        {page + 1}
+                                    </button>
+                                ))}
+                                <button
+                                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                                    onClick={() =>
+                                        handlePageChange(currentPage + 1)
+                                    }
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
 
                         {/* Action Buttons */}
                         <div className="flex justify-between pt-4 mt-4">
-                            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                            <button
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                                onClick={goToPreviousStep}
+                            >
                                 Back
                             </button>
                             <button
