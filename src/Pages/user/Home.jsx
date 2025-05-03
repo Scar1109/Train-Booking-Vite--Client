@@ -1,11 +1,9 @@
-"use client";
-
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import Select from "react-select";
-import { Carousel, Switch, Card } from "antd";
-import { Icon } from "@iconify/react";
-import NavBar from "../../components/NavBar";
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import Select from "react-select"
+import { Carousel, Switch, Card } from "antd"
+import { Icon } from "@iconify/react"
+import NavBar from "../../components/NavBar"
 
 const Home = () => {
     const [activeTab, setActiveTab] = useState("general");
@@ -243,17 +241,39 @@ const Home = () => {
 
             setErrors(newErrors);
 
-            // If no errors, navigate to TicketBooking page
+            // If no errors, save to localStorage and navigate to TicketBooking page
             if (!Object.values(newErrors).includes(true)) {
-                console.log("Form submitted:", {
-                    fromStation,
-                    toStation,
+                const formData = {
+                    fromStation: fromStation?.value || "",
+                    toStation: toStation?.value || "",
                     date,
                     passengers,
                     isReturn,
                     returnDate,
+                    timestamp: new Date().toISOString(),
+                };
+
+                // Save to localStorage
+                localStorage.setItem(
+                    "trainBookingData",
+                    JSON.stringify(formData)
+                );
+
+                console.log(
+                    "Form submitted and saved to localStorage:",
+                    formData
+                );
+                navigate("/TicketBooking", {
+                    state: {
+                        startStep: 2,
+                        fromStation: fromStation?.value,
+                        toStation: toStation?.value,
+                        date,
+                        passengers,
+                        isReturn,
+                        returnDate,
+                    },
                 });
-                navigate("/TicketBooking", { state: { startStep: 2 } }); // Navigate with state to start at step 2
             }
         };
 
@@ -524,6 +544,25 @@ const Home = () => {
 
             if (Object.keys(validationErrors).length === 0) {
                 console.log("Warrant form submitted:", formData);
+
+                // Save to localStorage
+                localStorage.setItem(
+                    "trainBookingData",
+                    JSON.stringify({
+                        fromStation: formData.fromStation,
+                        toStation: formData.toStation,
+                        date: formData.date,
+                        passengers: formData.passengers,
+                        isWarrant: true,
+                        warrantDetails: {
+                            warrantNumber: formData.warrantNumber,
+                            departmentCode: formData.departmentCode,
+                            classType: formData.classType,
+                        },
+                        timestamp: new Date().toISOString(),
+                    })
+                );
+
                 navigate("/TicketBooking", { state: { startStep: 2 } });
             }
         };

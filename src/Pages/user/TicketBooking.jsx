@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
 import AxiosInstance from "../../AxiosInstance";
-import { Table, Button, Tabs } from "antd";
 
 const TicketBooking = () => {
     const steps = [
@@ -17,7 +15,7 @@ const TicketBooking = () => {
     const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState(
         location.state?.startStep || 2
-    ); // Default to Check Availability step
+    );
     const [activeTab, setActiveTab] = useState("oneway");
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState("");
@@ -32,6 +30,40 @@ const TicketBooking = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [passengerCount, setPassengerCount] = useState(2);
+    const [cardDetails, setCardDetails] = useState({
+        cardNumber: "",
+        cardholderName: "",
+        expiryDate: "",
+        cvv: "",
+    });
+    const [showPaymentForm, setShowPaymentForm] = useState(false);
+    const [bookingData, setBookingData] = useState({
+        bookingReference: `SLR-${Math.floor(Math.random() * 1000000000)
+            .toString()
+            .padStart(9, "0")}`,
+        bookingDate: new Date().toISOString().split("T")[0],
+        paymentStatus: "Pending",
+        train: {
+            name: "",
+            number: "",
+            startStation: "Aluthgama", // Updated default
+            endStation: "Ambalangoda", // Updated default
+            departureDate: "2025-05-30", // Updated default
+            departureTime: "",
+            arrivalTime: "",
+            class: "",
+            coach: "A",
+            seats: [],
+        },
+        passengers: [],
+        pricing: {
+            baseFare: 0,
+            numberOfPassengers: passengerCount,
+            serviceCharge: 0,
+            totalPrice: 0,
+        },
+    });
 
     // Class color mapping
     const classColors = {
@@ -92,39 +124,34 @@ const TicketBooking = () => {
         return classColors.default;
     };
 
-    // Function to fetch trains from API
+    // Modified fetchTrains to use bookingData.train for API query
     const fetchTrains = async (page = 1, limit = 10) => {
         try {
             setLoading(true);
+            const { startStation, endStation, departureDate } =
+                bookingData.train;
             const response = await AxiosInstance.get(
-                `/api/trains?page=${page}&limit=${limit}`
+                `/api/trains?from=${startStation}&to=${endStation}&date=${departureDate}&page=${page}&limit=${limit}`
             );
 
             if (response.data.success) {
-                // Map API data to the format expected by the UI
                 const formattedTrains = response.data.trains.map((train) => {
-                    // Format all classes for display
-                    const formattedClasses = train.classes.map((classItem) => {
-                        return {
-                            id:
-                                classItem._id ||
-                                `class-${Math.random()
-                                    .toString(36)
-                                    .substr(2, 9)}`,
-                            type: classItem.type || "N/A",
-                            color: getClassColor(classItem.type || ""),
-                            capacity: classItem.capacity || 0,
-                            available: classItem.available || 0,
-                            price: `LKR ${
-                                classItem.price?.toLocaleString() || 0
-                            }`,
-                            priceValue: classItem.price || 0,
-                        };
-                    });
+                    const formattedClasses = train.classes.map((classItem) => ({
+                        id:
+                            classItem._id ||
+                            `class-${Math.random().toString(36).substr(2, 9)}`,
+                        type: classItem.type || "N/A",
+                        color: getClassColor(classItem.type || ""),
+                        capacity: classItem.capacity || 0,
+                        available: classItem.available || 0,
+                        price: `LKR ${classItem.price?.toLocaleString() || 0}`,
+                        priceValue: classItem.price || 0,
+                    }));
 
                     return {
                         id: train._id,
                         name: train.name,
+                        number: train.number || "1005",
                         route: `${train.route.from} - ${train.route.to}`,
                         fullRoute: `${train.route.from} - ${train.route.to}`,
                         departs: train.departureTime,
@@ -134,8 +161,6 @@ const TicketBooking = () => {
                 });
 
                 setTrainData(formattedTrains);
-
-                // Calculate total pages
                 const total = response.data.pagination.total;
                 const totalPages = Math.ceil(total / limit);
                 setTotalPages(totalPages);
@@ -153,10 +178,113 @@ const TicketBooking = () => {
         }
     };
 
-    // Fetch trains when component mounts or when page/limit changes
+    // Fetch trains when bookingData.train or page/limit changes
     useEffect(() => {
         fetchTrains(currentPage, limit);
-    }, [currentPage, limit]);
+
+        const params = new URLSearchParams(location.search);
+        const trainId = params.get("trainId");
+        const passengers = params.get("passengers");
+
+        if (passengers) {
+            setPassengerCount(Number.parseInt(passengers, 10) || 2);
+            setBookingData((prev) => ({
+                ...prev,
+                pricing: {
+                    ...prev.pricing,
+                    numberOfPassengers: Number.parseInt(passengers, 10) || 2,
+                },
+            }));
+        }
+
+        if (trainId) {
+            setSelectedTrain(trainId);
+        }
+    }, [
+        currentPage,
+        limit,
+        bookingData.train.startStation,
+        bookingData.train.endStation,
+        bookingData.train.departureDate,
+        location.search,
+    ]);
+
+    // Initialize passengers array when passenger count changes
+    useEffect(() => {
+        const initialPassengers = Array.from(
+            { length: passengerCount },
+            (_, index) => ({
+                id: index + 1,
+                type: index === 0 ? "Adult" : "Adult",
+                title: index === 0 ? "Mr." : "Mrs.",
+                firstName: "",
+                lastName: "",
+                idType: "NIC",
+                idNumber: "",
+                gender: index === 0 ? "Male" : "Female",
+                age: "",
+                seatPreference: index === 0 ? "Window" : "Aisle",
+                mealPreference: index === 0 ? "Regular" : "Vegetarian",
+                seatNumber: "",
+            })
+        );
+
+        setPassengers(initialPassengers);
+
+        setBookingData((prev) => ({
+            ...prev,
+            pricing: {
+                ...prev.pricing,
+                numberOfPassengers: passengerCount,
+            },
+        }));
+    }, [passengerCount]);
+
+    // Update booking data when train is selected
+    useEffect(() => {
+        if (selectedTrain && trainData.length > 0) {
+            const selectedTrainData = trainData.find(
+                (train) => train.id === selectedTrain
+            );
+            if (selectedTrainData) {
+                const selectedClassData = selectedClass.classId
+                    ? selectedTrainData.classes.find(
+                          (c) => c.id === selectedClass.classId
+                      )
+                    : selectedTrainData.classes[0];
+
+                if (selectedClassData) {
+                    const baseFare = selectedClassData.priceValue;
+                    const serviceCharge = Math.round(baseFare * 0.05); // 5% service charge
+                    const totalPrice =
+                        baseFare * passengerCount + serviceCharge;
+
+                    setBookingData((prev) => ({
+                        ...prev,
+                        train: {
+                            ...prev.train,
+                            name: selectedTrainData.name,
+                            number: selectedTrainData.number,
+                            departureTime: selectedTrainData.departs,
+                            arrivalTime: selectedTrainData.arrives,
+                            class: selectedClassData.type,
+                            seats: Array.from(
+                                { length: passengerCount },
+                                (_, i) => `A${i + 12}`
+                            ),
+                        },
+                        pricing: {
+                            ...prev.pricing,
+                            baseFare,
+                            serviceCharge,
+                            totalPrice,
+                            numberOfPassengers: passengerCount,
+                        },
+                    }));
+                }
+            }
+        }
+    }, [selectedTrain, selectedClass, trainData, passengerCount]);
 
     const handleTrainSelect = (trainId, classId = null) => {
         if (trainId === selectedTrain && !classId) {
@@ -180,17 +308,57 @@ const TicketBooking = () => {
         }
     };
 
-    const handleClassSelect = (trainId, classId) => {
+    const handleClassSelect = (trainId, classId, event) => {
+        if (event) {
+            event.stopPropagation();
+        }
+
         setSelectedTrain(trainId);
         setSelectedClass({
             trainId,
             classId,
         });
 
-        // Stop event propagation to prevent the train row click handler from firing
-        event.stopPropagation();
+        // Find the selected train and class
+        const selectedTrainData = trainData.find(
+            (train) => train.id === trainId
+        );
+        if (selectedTrainData) {
+            const selectedClassData = selectedTrainData.classes.find(
+                (c) => c.id === classId
+            );
+            if (selectedClassData) {
+                const baseFare = selectedClassData.priceValue;
+                const serviceCharge = Math.round(baseFare * 0.05); // 5% service charge
+                const totalPrice = baseFare * passengerCount + serviceCharge;
+
+                setBookingData((prev) => ({
+                    ...prev,
+                    train: {
+                        ...prev.train,
+                        name: selectedTrainData.name,
+                        number: selectedTrainData.number,
+                        departureTime: selectedTrainData.departs,
+                        arrivalTime: selectedTrainData.arrives,
+                        class: selectedClassData.type,
+                        seats: Array.from(
+                            { length: passengerCount },
+                            (_, i) => `A${i + 12}`
+                        ),
+                    },
+                    pricing: {
+                        ...prev.pricing,
+                        baseFare,
+                        serviceCharge,
+                        totalPrice,
+                        numberOfPassengers: passengerCount,
+                    },
+                }));
+            }
+        }
     };
 
+    // Modified handleContinue to avoid navigation and just change step
     const handleContinue = () => {
         if (selectedTrain) {
             const selectedTrainData = trainData.find(
@@ -198,15 +366,49 @@ const TicketBooking = () => {
             );
             const selectedClassData = selectedClass.classId
                 ? selectedTrainData?.classes.find(
-                    (c) => c.id === selectedClass.classId
-                )
+                      (c) => c.id === selectedClass.classId
+                  )
                 : selectedTrainData?.classes[0];
 
-            console.log("Selected train:", selectedTrainData?.name);
-            console.log("Selected class:", selectedClassData?.type);
+            if (selectedTrainData && selectedClassData) {
+                console.log("Selected train:", selectedTrainData.name);
+                console.log("Selected class:", selectedClassData.type);
 
-            // Navigate to the next step
-            goToNextStep();
+                // Ensure bookingData is updated (already handled by useEffect, but confirm here)
+                setBookingData((prev) => ({
+                    ...prev,
+                    train: {
+                        ...prev.train,
+                        name: selectedTrainData.name,
+                        number: selectedTrainData.number,
+                        departureTime: selectedTrainData.departs,
+                        arrivalTime: selectedTrainData.arrives,
+                        class: selectedClassData.type,
+                        seats: Array.from(
+                            { length: passengerCount },
+                            (_, i) => `A${i + 12}`
+                        ),
+                    },
+                    pricing: {
+                        ...prev.pricing,
+                        baseFare: selectedClassData.priceValue,
+                        serviceCharge: Math.round(
+                            selectedClassData.priceValue * 0.05
+                        ),
+                        totalPrice:
+                            selectedClassData.priceValue * passengerCount +
+                            Math.round(selectedClassData.priceValue * 0.05),
+                        numberOfPassengers: passengerCount,
+                    },
+                }));
+
+                // Move to Confirmation & Payment step
+                setCurrentStep(3);
+            } else {
+                alert("Please select a valid train and class.");
+            }
+        } else {
+            alert("Please select a train to continue.");
         }
     };
 
@@ -222,64 +424,9 @@ const TicketBooking = () => {
         fetchTrains(currentPage, limit);
     };
 
-    // Toggle expanded view for a train to show all classes
-    const toggleExpandTrain = (trainId) => {
-        setExpandedTrain(expandedTrain === trainId ? null : trainId);
-    };
+    const [passengers, setPassengers] = useState([]);
+    const [selectedSeatType, setSelectedSeatType] = useState(null);
 
-    // Function to select a specific class for a train
-    const selectTrainClass = (trainId, classType) => {
-        // Find the train
-        const train = trainData.find((t) => t.id === trainId);
-        if (!train) return;
-
-        // Update the primary class for this train
-        const selectedClass = train.classes.find((c) => c.type === classType);
-        if (!selectedClass) return;
-
-        // Create a new array with the updated train
-        const updatedTrainData = trainData.map((t) => {
-            if (t.id === trainId) {
-                return {
-                    ...t,
-                    primaryClass: selectedClass,
-                };
-            }
-            return t;
-        });
-
-        setTrainData(updatedTrainData);
-        setSelectedTrain(trainId);
-    };
-
-    const [passengers, setPassengers] = useState([
-        {
-            id: 1,
-            type: "Adult",
-            title: "Mr.",
-            firstName: "",
-            lastName: "",
-            idType: "NIC",
-            idNumber: "",
-            gender: "Male",
-            age: "",
-            seatPreference: "Window",
-            mealPreference: "Regular",
-        },
-        {
-            id: 2,
-            type: "Adult",
-            title: "Mrs.",
-            firstName: "",
-            lastName: "",
-            idType: "NIC",
-            idNumber: "",
-            gender: "Female",
-            age: "",
-            seatPreference: "Aisle",
-            mealPreference: "Vegetarian",
-        },
-    ]);
     const handleInputChange = (id, field, value) => {
         setPassengers(
             passengers.map((passenger) =>
@@ -289,51 +436,252 @@ const TicketBooking = () => {
             )
         );
     };
-    // Sample data - in a real app, this would come from your booking state
-    const bookingData = {
-        bookingReference: "SLR-2025052901",
-        bookingDate: "2025-05-03",
-        paymentStatus: "Confirmed",
-        train: {
-            name: "Podi Menike",
-            number: "1005",
-            startStation: "Colombo Fort",
-            endStation: "Badulla",
-            departureDate: "2025-05-29",
-            departureTime: "05:55",
-            arrivalTime: "16:20",
-            class: "Air Conditioned Saloon",
-            coach: "A",
-            seats: ["A12", "A13"],
-        },
-        passengers: [
-            {
-                id: 1,
-                type: "Adult",
-                title: "Mr.",
-                firstName: "John",
-                lastName: "Doe",
-                idType: "NIC",
-                idNumber: "982731456V",
-                seatNumber: "A12",
-            },
-            {
-                id: 2,
-                type: "Adult",
-                title: "Mrs.",
-                firstName: "Jane",
-                lastName: "Doe",
-                idType: "NIC",
-                idNumber: "986543217V",
-                seatNumber: "A13",
-            },
-        ],
-        pricing: {
-            baseFare: 3000,
-            numberOfPassengers: 2,
-            serviceCharge: 300,
-            totalPrice: 6300,
-        },
+
+    const handleCardInputChange = (field, value) => {
+        setCardDetails({
+            ...cardDetails,
+            [field]: value,
+        });
+    };
+
+    const handleProceedToPayment = () => {
+        if (!acceptTerms || !paymentMethod) {
+            alert("Please accept terms and select a payment method");
+            return;
+        }
+
+        setShowPaymentForm(true);
+    };
+
+    const handlePaymentSubmit = (e) => {
+        e.preventDefault();
+
+        // Validate card details
+        if (
+            !cardDetails.cardNumber ||
+            !cardDetails.cardholderName ||
+            !cardDetails.expiryDate ||
+            !cardDetails.cvv
+        ) {
+            alert("Please fill in all card details");
+            return;
+        }
+
+        // Update booking data with payment status
+        setBookingData((prev) => ({
+            ...prev,
+            paymentStatus: "Confirmed",
+        }));
+
+        // Navigate to passenger information
+        setCurrentStep(4);
+        setShowPaymentForm(false);
+    };
+
+    const handleCompleteBooking = async () => {
+        try {
+            // Get userId from JWT token in localStorage
+            let userId;
+            const token = localStorage.getItem("UserToken");
+            if (!token) {
+                throw new Error("Please log in to complete the booking.");
+            }
+            // Prepare booking data for API
+            const bookingPayload = {
+                userId, // Valid ObjectId
+                ticketId: bookingData.bookingReference,
+                numTickets: passengerCount,
+                paymentMethod: paymentMethod,
+                price: bookingData.pricing.totalPrice,
+                ipAddress: "127.0.0.1", // Replace with actual client IP if available
+                passengers: passengers.map((p) => ({
+                    title: p.title,
+                    firstName: p.firstName,
+                    lastName: p.lastName,
+                    idType: p.idType,
+                    idNumber: p.idNumber,
+                    gender: p.gender,
+                    age: p.age || "",
+                    seatPreference: p.seatPreference || "",
+                    mealPreference: p.mealPreference || "",
+                    seatNumber: p.seatNumber || "",
+                })),
+                trainDetails: {
+                    trainId: selectedTrain,
+                    trainName: bookingData.train.name,
+                    trainNumber: bookingData.train.number,
+                    class: bookingData.train.class,
+                    departureStation: bookingData.train.startStation,
+                    arrivalStation: bookingData.train.endStation,
+                    departureDate: bookingData.train.departureDate,
+                    departureTime: bookingData.train.departureTime,
+                    arrivalTime: bookingData.train.arrivalTime,
+                },
+            };
+    
+            // Call API to save booking
+            const response = await AxiosInstance.post(
+                "/api/bookings/create",
+                bookingPayload
+            );
+    
+            if (response.data.success) {
+                alert("Booking completed successfully!");
+                setCurrentStep(5); // Move to Ticket Summary step
+            } else {
+                alert("Failed to complete booking: " + response.data.message);
+            }
+        } catch (error) {
+            console.error("Error completing booking:", error);
+            alert(`Booking failed: ${error.message || "Please try again."}`);
+        }
+    };
+
+    const handleContinueToTicketSummary = () => {
+        // Validate passenger information
+        const isValid = passengers.every(
+            (p) => p.firstName && p.lastName && p.idNumber && p.age
+        );
+
+        if (!isValid) {
+            alert("Please fill in all required passenger information");
+            return;
+        }
+
+        // Update booking data with passenger information
+        setBookingData((prev) => ({
+            ...prev,
+            passengers: passengers.map((p, index) => ({
+                id: p.id,
+                type: p.type,
+                title: p.title,
+                firstName: p.firstName,
+                lastName: p.lastName,
+                idType: p.idType,
+                idNumber: p.idNumber,
+                seatNumber: prev.train.seats[index] || `A${12 + index}`,
+            })),
+        }));
+
+        // Navigate to ticket summary
+        setCurrentStep(5);
+    };
+
+    // Modified useEffect to load localStorage data
+    useEffect(() => {
+        try {
+            const savedBookingData = localStorage.getItem("trainBookingData");
+            if (savedBookingData) {
+                const parsedData = JSON.parse(savedBookingData);
+                console.log(
+                    "Loaded booking data from localStorage:",
+                    parsedData
+                );
+
+                setBookingData((prev) => ({
+                    ...prev,
+                    train: {
+                        ...prev.train,
+                        startStation:
+                            parsedData.fromStation || prev.train.startStation,
+                        endStation:
+                            parsedData.toStation || prev.train.endStation,
+                        departureDate:
+                            parsedData.date || prev.train.departureDate,
+                    },
+                    pricing: {
+                        ...prev.pricing,
+                        numberOfPassengers:
+                            parsedData.passengers ||
+                            prev.pricing.numberOfPassengers,
+                    },
+                }));
+
+                // Update passenger count
+                if (parsedData.passengers) {
+                    setPassengerCount(parsedData.passengers);
+                }
+
+                // Set return trip and active tab
+                if (parsedData.isReturn !== undefined) {
+                    setIsReturnTrip(parsedData.isReturn);
+                    setActiveTab(parsedData.isReturn ? "return" : "oneway");
+                }
+            }
+        } catch (error) {
+            console.error(
+                "Error loading booking data from localStorage:",
+                error
+            );
+        }
+    }, []);
+
+    // Add this function to handle ticket download
+    const handleDownloadTicket = () => {
+        // Create ticket content
+        const ticketContent = `
+=================================================
+            SRI LANKA RAILWAYS E-TICKET
+=================================================
+Booking Reference: ${bookingData.bookingReference}
+Booking Date: ${bookingData.bookingDate}
+Payment Status: ${bookingData.paymentStatus}
+
+TRAIN DETAILS
+-------------------------------------------------
+Train: ${bookingData.train.name} (${bookingData.train.number})
+Class: ${bookingData.train.class}
+Coach: ${bookingData.train.coach}
+Seats: ${bookingData.train.seats.join(", ")}
+Date: ${bookingData.train.departureDate}
+
+JOURNEY
+-------------------------------------------------
+From: ${bookingData.train.startStation}
+Departure: ${bookingData.train.departureTime}
+To: ${bookingData.train.endStation}
+Arrival: ${bookingData.train.arrivalTime}
+
+PASSENGER DETAILS
+-------------------------------------------------
+${passengers
+    .map(
+        (p, i) => `
+   ${i + 1}. ${p.title} ${p.firstName} ${p.lastName}
+   ID: ${p.idType} ${p.idNumber}
+   Seat: ${bookingData.train.seats[i] || `A${12 + i}`}`
+    )
+    .join("\n")}
+
+PRICE BREAKDOWN
+-------------------------------------------------
+Base Fare (${bookingData.pricing.numberOfPassengers} passengers): LKR ${
+            bookingData.pricing.baseFare *
+            bookingData.pricing.numberOfPassengers
+        }
+Service Charge: LKR ${bookingData.pricing.serviceCharge}
+Total: LKR ${bookingData.pricing.totalPrice}
+
+IMPORTANT INFORMATION
+-------------------------------------------------
+- Please arrive at the station at least 30 minutes before departure.
+- Have your ID ready for verification along with this e-ticket.
+- Seats are confirmed and reserved as per the details above.
+- For any changes or cancellations, please contact customer support
+  at least 24 hours before departure.
+=================================================
+`;
+
+        // Create a blob and download link
+        const blob = new Blob([ticketContent], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `SLR_Ticket_${bookingData.bookingReference}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -456,7 +804,9 @@ const TicketBooking = () => {
                             <div className="flex justify-between items-center">
                                 <div>
                                     <div className="flex items-center text-2xl font-medium mb-2">
-                                        <span>Colombo Fort</span>
+                                        <span>
+                                            {bookingData.train.startStation}
+                                        </span>
                                         <svg
                                             xmlns="http://www.w3.org/2000/svg"
                                             className="h-6 w-6 mx-2"
@@ -471,31 +821,43 @@ const TicketBooking = () => {
                                                 d="M14 5l7 7m0 0l-7 7m7-7H3"
                                             />
                                         </svg>
-                                        <span>Badulla</span>
+                                        <span>
+                                            {bookingData.train.endStation}
+                                        </span>
                                     </div>
                                     <div className="text-gray-600">
-                                        Date -{" "}
-                                        {new Date().toISOString().split("T")[0]}
+                                        Date - {bookingData.train.departureDate}
                                     </div>
 
-                                    <div className="flex items-center mt-3 text-blue-600">
-                                        <span className="font-medium">
-                                            Select a train and proceed
-                                        </span>
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-5 w-5 ml-1"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M14 5l7 7m0 0l-7 7m7-7H3"
-                                            />
-                                        </svg>
+                                    <div className="flex items-center mt-3">
+                                        <div className="mr-4">
+                                            <label
+                                                htmlFor="passengerCount"
+                                                className="block text-sm font-medium text-gray-700"
+                                            >
+                                                Passengers: {passengerCount}
+                                            </label>
+                                        </div>
+
+                                        <div className="flex items-center text-blue-600">
+                                            <span className="font-medium">
+                                                Select a train and proceed
+                                            </span>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-5 w-5 ml-1"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                                />
+                                            </svg>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -549,7 +911,7 @@ const TicketBooking = () => {
                             <div className="overflow-x-auto border border-gray-200 rounded-md">
                                 {/* Table Header */}
                                 <div className="min-w-full">
-                                    <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-5 py-3 px-4">
+                                    <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-6 py-3 px-4">
                                         <div className="flex items-center text-sm font-medium text-gray-700">
                                             Train Name
                                             <svg
@@ -586,6 +948,23 @@ const TicketBooking = () => {
                                         </div>
                                         <div className="flex items-center text-sm font-medium text-gray-700">
                                             Arrives
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                className="h-4 w-4 ml-1 text-gray-400"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth={2}
+                                                    d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                                />
+                                            </svg>
+                                        </div>
+                                        <div className="flex items-center text-sm font-medium text-gray-700">
+                                            Available Seats
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 className="h-4 w-4 ml-1 text-gray-400"
@@ -643,7 +1022,7 @@ const TicketBooking = () => {
                                             trainData.map((train) => (
                                                 <div
                                                     key={train.id}
-                                                    className={`grid grid-cols-5 py-4 px-4 cursor-pointer hover:bg-gray-50 ${
+                                                    className={`grid grid-cols-6 py-4 px-4 cursor-pointer hover:bg-gray-50 ${
                                                         selectedTrain ===
                                                         train.id
                                                             ? "bg-blue-50"
@@ -669,6 +1048,17 @@ const TicketBooking = () => {
                                                     <div className="flex items-center">
                                                         {train.arrives}
                                                     </div>
+                                                    <div className="flex items-center">
+                                                        <div className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+                                                            {train.classes.reduce(
+                                                                (total, cls) =>
+                                                                    total +
+                                                                    cls.available,
+                                                                0
+                                                            )}{" "}
+                                                            seats
+                                                        </div>
+                                                    </div>
                                                     <div className="flex flex-col space-y-2">
                                                         {train.classes.map(
                                                             (classItem) => (
@@ -677,9 +1067,27 @@ const TicketBooking = () => {
                                                                         classItem.id
                                                                     }
                                                                     className="flex items-center justify-between w-full"
+                                                                    onClick={(
+                                                                        e
+                                                                    ) =>
+                                                                        handleClassSelect(
+                                                                            train.id,
+                                                                            classItem.id,
+                                                                            e
+                                                                        )
+                                                                    }
                                                                 >
                                                                     <div
-                                                                        className={`${classItem.color} text-white px-3 py-1.5 rounded-md text-sm flex-grow flex justify-between items-center`}
+                                                                        className={`${
+                                                                            classItem.color
+                                                                        } text-white px-3 py-1.5 rounded-md text-sm flex-grow flex justify-between items-center ${
+                                                                            selectedClass.trainId ===
+                                                                                train.id &&
+                                                                            selectedClass.classId ===
+                                                                                classItem.id
+                                                                                ? "ring-2 ring-blue-400 ring-offset-1"
+                                                                                : ""
+                                                                        }`}
                                                                     >
                                                                         <span>
                                                                             {
@@ -709,11 +1117,22 @@ const TicketBooking = () => {
                                                                         e
                                                                     ) =>
                                                                         handleClassSelect(
+                                                                            train.id,
+                                                                            classItem.id,
                                                                             e
                                                                         )
                                                                     }
                                                                 >
-                                                                    <span className="font-medium">
+                                                                    <span
+                                                                        className={`font-medium ${
+                                                                            selectedClass.trainId ===
+                                                                                train.id &&
+                                                                            selectedClass.classId ===
+                                                                                classItem.id
+                                                                                ? "text-blue-600"
+                                                                                : ""
+                                                                        }`}
+                                                                    >
                                                                         {
                                                                             classItem.price
                                                                         }
@@ -816,7 +1235,17 @@ const TicketBooking = () => {
                                         </span>
                                         <label className="text-sm">Title</label>
                                     </div>
-                                    <select className="w-full border border-gray-300 rounded p-2 text-sm">
+                                    <select
+                                        className="w-full border border-gray-300 rounded p-2 text-sm"
+                                        value={passengers[0]?.title || "Mr."}
+                                        onChange={(e) =>
+                                            handleInputChange(
+                                                1,
+                                                "title",
+                                                e.target.value
+                                            )
+                                        }
+                                    >
                                         <option>Mr.</option>
                                         <option>Mrs.</option>
                                         <option>Ms.</option>
@@ -836,6 +1265,14 @@ const TicketBooking = () => {
                                         type="text"
                                         placeholder="First Name"
                                         className="w-full border border-gray-300 rounded p-2 text-sm"
+                                        value={passengers[0]?.firstName || ""}
+                                        onChange={(e) =>
+                                            handleInputChange(
+                                                1,
+                                                "firstName",
+                                                e.target.value
+                                            )
+                                        }
                                     />
                                 </div>
 
@@ -852,6 +1289,14 @@ const TicketBooking = () => {
                                         type="text"
                                         placeholder="Last Name"
                                         className="w-full border border-gray-300 rounded p-2 text-sm"
+                                        value={passengers[0]?.lastName || ""}
+                                        onChange={(e) =>
+                                            handleInputChange(
+                                                1,
+                                                "lastName",
+                                                e.target.value
+                                            )
+                                        }
                                     />
                                 </div>
 
@@ -864,7 +1309,17 @@ const TicketBooking = () => {
                                             Gender
                                         </label>
                                     </div>
-                                    <select className="w-full border border-gray-300 rounded p-2 text-sm">
+                                    <select
+                                        className="w-full border border-gray-300 rounded p-2 text-sm"
+                                        value={passengers[0]?.gender || "Male"}
+                                        onChange={(e) =>
+                                            handleInputChange(
+                                                1,
+                                                "gender",
+                                                e.target.value
+                                            )
+                                        }
+                                    >
                                         <option>Male</option>
                                         <option>Female</option>
                                     </select>
@@ -905,7 +1360,14 @@ const TicketBooking = () => {
                                                     ? "bg-gray-700"
                                                     : "bg-gray-400"
                                             } text-white py-1 px-2 text-sm`}
-                                            onClick={() => setIdType("NIC")}
+                                            onClick={() => {
+                                                setIdType("NIC");
+                                                handleInputChange(
+                                                    1,
+                                                    "idType",
+                                                    "NIC"
+                                                );
+                                            }}
                                         >
                                             NIC
                                         </button>
@@ -916,9 +1378,14 @@ const TicketBooking = () => {
                                                     ? "bg-gray-700"
                                                     : "bg-gray-400"
                                             } text-white py-1 px-2 text-sm`}
-                                            onClick={() =>
-                                                setIdType("Passport")
-                                            }
+                                            onClick={() => {
+                                                setIdType("Passport");
+                                                handleInputChange(
+                                                    1,
+                                                    "idType",
+                                                    "Passport"
+                                                );
+                                            }}
                                         >
                                             Passport
                                         </button>
@@ -938,6 +1405,14 @@ const TicketBooking = () => {
                                         type="text"
                                         placeholder={idType}
                                         className="w-full border border-gray-300 rounded p-2 text-sm"
+                                        value={passengers[0]?.idNumber || ""}
+                                        onChange={(e) =>
+                                            handleInputChange(
+                                                1,
+                                                "idNumber",
+                                                e.target.value
+                                            )
+                                        }
                                     />
                                 </div>
 
@@ -958,74 +1433,134 @@ const TicketBooking = () => {
                         </div>
 
                         {/* Other Passenger Details */}
-                        <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-                            <h3 className="text-lg font-medium text-gray-800 mb-1">
-                                Other Passenger Details
-                            </h3>
-                            <p className="text-sm mb-2">
-                                Please enter details of all other passengers
-                            </p>
-                            <p className="text-xs text-red-500 mb-3">
-                                If the passenger is below 17 years and does not
-                                have either passport or NIC, please select the
-                                'Dependent' category.
-                            </p>
+                        {passengerCount > 1 && (
+                            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                                <h3 className="text-lg font-medium text-gray-800 mb-1">
+                                    Other Passenger Details
+                                </h3>
+                                <p className="text-sm mb-2">
+                                    Please enter details of all other passengers
+                                </p>
+                                <p className="text-xs text-red-500 mb-3">
+                                    If the passenger is below 17 years and does
+                                    not have either passport or NIC, please
+                                    select the 'Dependent' category.
+                                </p>
 
-                            <div className="overflow-x-auto">
-                                <table className="w-full min-w-full">
-                                    <thead>
-                                        <tr className="text-left">
-                                            <th className="pb-2 font-medium">
-                                                Passenger
-                                            </th>
-                                            <th className="pb-2 font-medium">
-                                                Type
-                                            </th>
-                                            <th className="pb-2 font-medium">
-                                                Identification No
-                                            </th>
-                                            <th className="pb-2 font-medium">
-                                                Gender
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td className="py-1">
-                                                Passenger 1
-                                            </td>
-                                            <td className="py-1">
-                                                <select className="w-full border border-gray-300 rounded p-1 text-sm">
-                                                    <option>Select</option>
-                                                    <option>Adult</option>
-                                                    <option>Child</option>
-                                                    <option>Dependent</option>
-                                                    <option>Senior</option>
-                                                </select>
-                                            </td>
-                                            <td className="py-1">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Identification No"
-                                                    className="w-full border border-gray-300 rounded p-1 text-sm"
-                                                />
-                                            </td>
-                                            <td className="py-1">
-                                                <select className="w-full border border-gray-300 rounded p-1 text-sm">
-                                                    <option>Select</option>
-                                                    <option>Male</option>
-                                                    <option>Female</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-full">
+                                        <thead>
+                                            <tr className="text-left">
+                                                <th className="pb-2 font-medium">
+                                                    Passenger
+                                                </th>
+                                                <th className="pb-2 font-medium">
+                                                    Type
+                                                </th>
+                                                <th className="pb-2 font-medium">
+                                                    Identification No
+                                                </th>
+                                                <th className="pb-2 font-medium">
+                                                    Gender
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {passengers
+                                                .slice(1)
+                                                .map((passenger, index) => (
+                                                    <tr key={passenger.id}>
+                                                        <td className="py-1">
+                                                            Passenger{" "}
+                                                            {index + 2}
+                                                        </td>
+                                                        <td className="py-1">
+                                                            <select
+                                                                className="w-full border border-gray-300 rounded p-1 text-sm"
+                                                                value={
+                                                                    passenger.type
+                                                                }
+                                                                onChange={(e) =>
+                                                                    handleInputChange(
+                                                                        passenger.id,
+                                                                        "type",
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                            >
+                                                                <option value="">
+                                                                    Select
+                                                                </option>
+                                                                <option value="Adult">
+                                                                    Adult
+                                                                </option>
+                                                                <option value="Child">
+                                                                    Child
+                                                                </option>
+                                                                <option value="Dependent">
+                                                                    Dependent
+                                                                </option>
+                                                                <option value="Senior">
+                                                                    Senior
+                                                                </option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="py-1">
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Identification No"
+                                                                className="w-full border border-gray-300 rounded p-1 text-sm"
+                                                                value={
+                                                                    passenger.idNumber
+                                                                }
+                                                                onChange={(e) =>
+                                                                    handleInputChange(
+                                                                        passenger.id,
+                                                                        "idNumber",
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                            />
+                                                        </td>
+                                                        <td className="py-1">
+                                                            <select
+                                                                className="w-full border border-gray-300 rounded p-1 text-sm"
+                                                                value={
+                                                                    passenger.gender
+                                                                }
+                                                                onChange={(e) =>
+                                                                    handleInputChange(
+                                                                        passenger.id,
+                                                                        "gender",
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                            >
+                                                                <option value="">
+                                                                    Select
+                                                                </option>
+                                                                <option value="Male">
+                                                                    Male
+                                                                </option>
+                                                                <option value="Female">
+                                                                    Female
+                                                                </option>
+                                                            </select>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p className="text-xs text-gray-600 mt-3">
+                                    Mandatory fields are marked with{" "}
+                                    <span className="text-red-500">*</span>
+                                </p>
                             </div>
-                            <p className="text-xs text-gray-600 mt-3">
-                                Mandatory fields are marked with{" "}
-                                <span className="text-red-500">*</span>
-                            </p>
-                        </div>
+                        )}
 
                         {/* Seat Selection */}
                         <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
@@ -1038,93 +1573,128 @@ const TicketBooking = () => {
                             <hr className="border-gray-300 mb-4" />
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Air Conditioned Saloon */}
-                                <div className="bg-white rounded-md overflow-hidden shadow-sm">
-                                    <div className="p-4 flex justify-between">
-                                        <div>
-                                            <h4 className="font-medium">
-                                                Air Conditioned
-                                            </h4>
-                                            <p className="text-gray-600">
-                                                Saloon
-                                            </p>
-                                        </div>
-                                        <div className="flex items-start">
-                                            <div className="bg-gray-200 rounded-full px-2 py-1 flex items-center text-xs">
-                                                <svg
-                                                    className="w-4 h-4 text-gray-600 mr-1"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    xmlns="http://www.w3.org/2000/svg"
+                                {trainData.length > 0 ? (
+                                    trainData
+                                        .filter(
+                                            (train) =>
+                                                train.id === selectedTrain
+                                        )
+                                        .map((train) =>
+                                            train.classes.map((classItem) => (
+                                                <div
+                                                    key={`${train.id}-${classItem.id}`}
+                                                    className={`bg-white rounded-md overflow-hidden shadow-sm cursor-pointer transition-all ${
+                                                        selectedSeatType ===
+                                                        `${train.id}-${classItem.id}`
+                                                            ? "ring-2 ring-blue-500"
+                                                            : ""
+                                                    }`}
+                                                    onClick={(e) => {
+                                                        handleClassSelect(
+                                                            train.id,
+                                                            classItem.id,
+                                                            e
+                                                        );
+                                                        setSelectedSeatType(
+                                                            `${train.id}-${classItem.id}`
+                                                        );
+                                                        setBookingData(
+                                                            (prev) => ({
+                                                                ...prev,
+                                                                train: {
+                                                                    ...prev.train,
+                                                                    class: classItem.type,
+                                                                },
+                                                                pricing: {
+                                                                    ...prev.pricing,
+                                                                    baseFare:
+                                                                        classItem.priceValue,
+                                                                    serviceCharge:
+                                                                        Math.round(
+                                                                            classItem.priceValue *
+                                                                                0.05
+                                                                        ),
+                                                                    totalPrice:
+                                                                        classItem.priceValue *
+                                                                            passengerCount +
+                                                                        Math.round(
+                                                                            classItem.priceValue *
+                                                                                0.05
+                                                                        ),
+                                                                },
+                                                            })
+                                                        );
+                                                    }}
                                                 >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth="2"
-                                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                    ></path>
-                                                </svg>
-                                                LKR 3000
-                                            </div>
-                                        </div>
+                                                    <div className="p-4 flex justify-between">
+                                                        <div>
+                                                            <h4 className="font-medium">
+                                                                {classItem.type}
+                                                            </h4>
+                                                            <p className="text-gray-600">
+                                                                {classItem.type.includes(
+                                                                    "Air Conditioned"
+                                                                )
+                                                                    ? "Saloon"
+                                                                    : "Seats"}
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex items-start">
+                                                            <div className="bg-gray-200 rounded-full px-2 py-1 flex items-center text-xs">
+                                                                <svg
+                                                                    className="w-4 h-4 text-gray-600 mr-1"
+                                                                    fill="none"
+                                                                    stroke="currentColor"
+                                                                    viewBox="0 0 24 24"
+                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                >
+                                                                    <path
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                        strokeWidth="2"
+                                                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                                    ></path>
+                                                                </svg>
+                                                                LKR{" "}
+                                                                {
+                                                                    classItem.priceValue
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="px-4 pb-4 flex justify-center">
+                                                        <img
+                                                            src={
+                                                                classItem.type.includes(
+                                                                    "Air Conditioned"
+                                                                )
+                                                                    ? "https://i.ibb.co/Pvg06fvw/seat.png"
+                                                                    : "https://i.ibb.co/Pvg06fvw/seat.png"
+                                                            }
+                                                            alt={`${classItem.type} Seat`}
+                                                            className="h-16 w-16"
+                                                            onError={(e) => {
+                                                                e.target.src =
+                                                                    "https://via.placeholder.com/64?text=Seat";
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="bg-blue-500 text-white p-2 flex justify-between">
+                                                        <span>Available</span>
+                                                        <span className="font-bold">
+                                                            {
+                                                                classItem.available
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )
+                                ) : (
+                                    <div className="col-span-2 text-center text-gray-500">
+                                        No seat types available for this train
                                     </div>
-                                    <div className="px-4 pb-4 flex justify-center">
-                                        <img
-                                            src="https://i.ibb.co/Pvg06fvw/seat.png"
-                                            alt="Air Conditioned Seat"
-                                            className="h-16 w-16"
-                                        />
-                                    </div>
-                                    <div className="bg-blue-500 text-white p-2 flex justify-between">
-                                        <span>Available</span>
-                                        <span className="font-bold">15</span>
-                                    </div>
-                                </div>
-
-                                {/* Third Class Reserved Seats */}
-                                <div className="bg-white rounded-md overflow-hidden shadow-sm">
-                                    <div className="p-4 flex justify-between">
-                                        <div>
-                                            <h4 className="font-medium">
-                                                Third Class Reserved
-                                            </h4>
-                                            <p className="text-gray-600">
-                                                Seats
-                                            </p>
-                                        </div>
-                                        <div className="flex items-start">
-                                            <div className="bg-gray-200 rounded-full px-2 py-1 flex items-center text-xs">
-                                                <svg
-                                                    className="w-4 h-4 text-gray-600 mr-1"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth="2"
-                                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                    ></path>
-                                                </svg>
-                                                LKR 1500
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="px-4 pb-4 flex justify-center">
-                                        <img
-                                            src="https://i.ibb.co/ns8n5myc/waiting-room.png"
-                                            alt="Third Class Seats"
-                                            className="h-16 w-16"
-                                        />
-                                    </div>
-                                    <div className="bg-blue-500 text-white p-2 flex justify-between">
-                                        <span>Available</span>
-                                        <span className="font-bold">22</span>
-                                    </div>
-                                </div>
+                                )}
                             </div>
                         </div>
 
@@ -1145,7 +1715,8 @@ const TicketBooking = () => {
                                             Train Name & No
                                         </span>
                                         <span className="text-sm">
-                                            1005 Podi Menike
+                                            {bookingData.train.number}{" "}
+                                            {bookingData.train.name}
                                         </span>
                                     </div>
 
@@ -1154,7 +1725,7 @@ const TicketBooking = () => {
                                             Start Station
                                         </span>
                                         <span className="text-sm">
-                                            Colombo Fort
+                                            {bookingData.train.startStation}
                                         </span>
                                     </div>
 
@@ -1162,7 +1733,9 @@ const TicketBooking = () => {
                                         <span className="text-sm font-medium">
                                             End Station
                                         </span>
-                                        <span className="text-sm">Badulla</span>
+                                        <span className="text-sm">
+                                            {bookingData.train.endStation}
+                                        </span>
                                     </div>
 
                                     <div className="grid grid-cols-2 py-1.5 px-2">
@@ -1170,7 +1743,7 @@ const TicketBooking = () => {
                                             Departure Date
                                         </span>
                                         <span className="text-sm">
-                                            2025-05-29
+                                            {bookingData.train.departureDate}
                                         </span>
                                     </div>
 
@@ -1179,7 +1752,8 @@ const TicketBooking = () => {
                                             Time Start -&gt; End
                                         </span>
                                         <span className="text-sm">
-                                            05:55 - 16:20
+                                            {bookingData.train.departureTime} -{" "}
+                                            {bookingData.train.arrivalTime}
                                         </span>
                                     </div>
 
@@ -1187,7 +1761,9 @@ const TicketBooking = () => {
                                         <span className="text-sm font-medium">
                                             No of Passengers
                                         </span>
-                                        <span className="text-sm">2</span>
+                                        <span className="text-sm">
+                                            {passengerCount}
+                                        </span>
                                     </div>
 
                                     <div className="grid grid-cols-2 py-1.5 px-2">
@@ -1198,7 +1774,7 @@ const TicketBooking = () => {
                                             <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded mr-2">
                                                 Selected
                                             </span>
-                                            Air Conditioned Saloon
+                                            {bookingData.train.class}
                                         </span>
                                     </div>
 
@@ -1210,7 +1786,7 @@ const TicketBooking = () => {
                                             <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded mr-2">
                                                 One Person
                                             </span>
-                                            3000
+                                            {bookingData.pricing.baseFare}
                                         </span>
                                     </div>
                                 </div>
@@ -1233,7 +1809,8 @@ const TicketBooking = () => {
                                         </svg>
                                     </div>
                                     <span className="font-medium">
-                                        Total Price - LKR: 6000
+                                        Total Price - LKR:{" "}
+                                        {bookingData.pricing.totalPrice}
                                     </span>
                                 </div>
                             </div>
@@ -1405,18 +1982,138 @@ const TicketBooking = () => {
                             </div>
                         </div>
 
+                        {/* Payment Form */}
+                        {showPaymentForm && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                                    <h3 className="text-xl font-semibold mb-4">
+                                        Enter Payment Details
+                                    </h3>
+                                    <form onSubmit={handlePaymentSubmit}>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Card Number
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                                                    placeholder="1234 5678 9012 3456"
+                                                    value={
+                                                        cardDetails.cardNumber
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleCardInputChange(
+                                                            "cardNumber",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                    maxLength={19}
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Cardholder Name
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full border border-gray-300 rounded-md px-3 py-2"
+                                                    placeholder="John Doe"
+                                                    value={
+                                                        cardDetails.cardholderName
+                                                    }
+                                                    onChange={(e) =>
+                                                        handleCardInputChange(
+                                                            "cardholderName",
+                                                            e.target.value
+                                                        )
+                                                    }
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Expiry Date
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                                                        placeholder="MM/YY"
+                                                        value={
+                                                            cardDetails.expiryDate
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleCardInputChange(
+                                                                "expiryDate",
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        maxLength={5}
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        CVV
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        className="w-full border border-gray-300 rounded-md px-3 py-2"
+                                                        placeholder="123"
+                                                        value={cardDetails.cvv}
+                                                        onChange={(e) =>
+                                                            handleCardInputChange(
+                                                                "cvv",
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        maxLength={3}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-6 flex justify-end space-x-3">
+                                            <button
+                                                type="button"
+                                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                                                onClick={() =>
+                                                    setShowPaymentForm(false)
+                                                }
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                                            >
+                                                Pay LKR{" "}
+                                                {bookingData.pricing.totalPrice}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Navigation Buttons */}
                         <div className="flex justify-between pt-4">
-                            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                            <button
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                                onClick={() => setCurrentStep(2)}
+                            >
                                 Back
                             </button>
                             <button
                                 className={`px-4 py-2 ${
-                                    acceptTerms
+                                    acceptTerms && paymentMethod
                                         ? "bg-blue-600 hover:bg-blue-700"
                                         : "bg-blue-300 cursor-not-allowed"
                                 } text-white rounded-md transition-colors`}
-                                disabled={!acceptTerms}
+                                disabled={!acceptTerms || !paymentMethod}
+                                onClick={handleProceedToPayment}
                             >
                                 Proceed to Payment
                             </button>
@@ -1589,6 +2286,7 @@ const TicketBooking = () => {
                                         </label>
                                         <div className="grid grid-cols-2 gap-1">
                                             <button
+                                                type="button"
                                                 className={`py-2 px-3 text-sm font-medium rounded-l-md ${
                                                     passenger.idType === "NIC"
                                                         ? "bg-gray-700 text-white"
@@ -1605,6 +2303,7 @@ const TicketBooking = () => {
                                                 NIC
                                             </button>
                                             <button
+                                                type="button"
                                                 className={`py-2 px-3 text-sm font-medium rounded-r-md ${
                                                     passenger.idType ===
                                                     "Passport"
@@ -1703,8 +2402,13 @@ const TicketBooking = () => {
                                             <option value="Kosher">
                                                 Kosher
                                             </option>
-                                            <option value="No Meal">
-                                                No Meal
+                                            <option value="Vegetarian">
+                                                Vegetarian
+                                            </option>
+                                            <option value="Vegan">Vegan</option>
+                                            <option value="Halal">Halal</option>
+                                            <option value="Kosher">
+                                                Kosher
                                             </option>
                                         </select>
                                     </div>
@@ -1725,10 +2429,16 @@ const TicketBooking = () => {
                         ))}
 
                         <div className="flex justify-between mt-6">
-                            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                            <button
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                                onClick={() => setCurrentStep(3)}
+                            >
                                 Back
                             </button>
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            <button
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                onClick={handleContinueToTicketSummary}
+                            >
                                 Continue to Ticket Summary
                             </button>
                         </div>
@@ -1759,7 +2469,10 @@ const TicketBooking = () => {
                                     </svg>
                                     Print
                                 </button>
-                                <button className="flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200">
+                                <button
+                                    onClick={handleDownloadTicket}
+                                    className="flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                >
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         className="h-4 w-4 mr-1"
@@ -1972,15 +2685,14 @@ const TicketBooking = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {bookingData.passengers
+                                            {passengers
                                                 .slice(
                                                     0,
                                                     showAllPassengers
-                                                        ? bookingData.passengers
-                                                              .length
+                                                        ? passengers.length
                                                         : 1
                                                 )
-                                                .map((passenger) => (
+                                                .map((passenger, index) => (
                                                     <tr key={passenger.id}>
                                                         <td className="px-3 py-2 whitespace-nowrap text-sm">
                                                             {passenger.title}{" "}
@@ -1997,9 +2709,11 @@ const TicketBooking = () => {
                                                             {passenger.idNumber}
                                                         </td>
                                                         <td className="px-3 py-2 whitespace-nowrap text-sm">
-                                                            {
-                                                                passenger.seatNumber
-                                                            }
+                                                            {bookingData.train
+                                                                .seats[index] ||
+                                                                `A${
+                                                                    12 + index
+                                                                }`}
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -2074,10 +2788,16 @@ const TicketBooking = () => {
                         </div>
                         {/* Actions */}
                         <div className="flex justify-between pt-4">
-                            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                            <button
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                                onClick={() => setCurrentStep(4)}
+                            >
                                 Back
                             </button>
-                            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                            <button
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                                onClick={handleCompleteBooking}
+                            >
                                 Complete Booking
                             </button>
                         </div>
@@ -2086,15 +2806,7 @@ const TicketBooking = () => {
             </div>
 
             {/* Bottom Navigation */}
-            <div className="flex justify-end mt-6">
-                {/* <button
-                    onClick={goToPreviousStep}
-                    className={`px-6 py-2 rounded-md border transition-all
-                        ${currentStep === 2 ? "bg-gray-300 text-gray-500 cursor-not-allowed" : "bg-gray-100 hover:bg-gray-200"}`}
-                >
-                    Previous
-                </button> */}
-
+            {/* <div className="flex justify-end mt-6">
                 {currentStep < steps.length ? (
                     <button
                         onClick={goToNextStep}
@@ -2104,13 +2816,13 @@ const TicketBooking = () => {
                     </button>
                 ) : (
                     <button
-                        onClick={() => alert("Booking Completed!")}
+                        onClick={handleCompleteBooking}
                         className="px-6 py-2 rounded-md bg-green-500 text-white hover:bg-green-600 transition duration-300"
                     >
                         Finish
                     </button>
                 )}
-            </div>
+            </div> */}
         </div>
     );
 };
