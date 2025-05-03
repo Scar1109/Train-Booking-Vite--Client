@@ -22,6 +22,8 @@ const TicketBooking = () => {
     const [paymentMethod, setPaymentMethod] = useState("");
     const [idType, setIdType] = useState("NIC");
     const [showAllPassengers, setShowAllPassengers] = useState(false);
+    const [selectedTrain, setSelectedTrain] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     const goToStep = (step) => {
         if (step === 1) {
@@ -130,40 +132,56 @@ const TicketBooking = () => {
     // Train Data
     const trainData = [
         {
-            key: "1",
-            name: "1 Special 01 - Colombo Fort - Badulla",
-            departs: "19:30",
-            arrives: "05:04",
-            class: [
-                { type: "Air Conditioned Saloon", seats: 88 },
-                { type: "Second Class Reserved Seats", seats: 48 },
-            ],
-            available: 7,
+            id: "1",
+            name: "1007 InterCity Express",
+            route: "Colombo Fort - Badulla",
+            fullRoute: "Colombo Fort - Badulla 09:45 - 19:25",
+            departs: "09:45",
+            arrives: "19:20",
+            class: "Observation Saloon",
+            classColor: "bg-gray-500",
+            seats: 44,
+            available: 3,
             price: "LKR 3,000.00",
         },
         {
-            key: "2",
-            name: "1045 Night Mail - Colombo Fort - Badulla",
-            departs: "20:30",
-            arrives: "05:37",
-            class: [{ type: "Third Class Sleepers", seats: 48 }],
-            available: 7,
+            id: "2",
+            name: "1015 Udarata Menike",
+            route: "Colombo Fort - Badulla",
+            fullRoute: "Colombo Fort - Badulla 08:30 - 18:32",
+            departs: "08:30",
+            arrives: "17:51",
+            class: "Third Class Reserved Seats",
+            classColor: "bg-blue-900",
+            seats: 72,
+            available: 13,
             price: "LKR 1,500.00",
         },
         {
-            key: "3",
-            name: "11041 Ella Odyssey - Colombo Fort - Badulla",
-            departs: "05:30",
-            arrives: "15:53",
-            class: [
-                { type: "Air Conditioned Saloon", seats: 176 },
-                { type: "Second Class Reserved Seats", seats: 144 },
-                { type: "Third Class Reserved Seats", seats: 39 },
-            ],
-            available: 70,
-            price: "LKR 8,000.00",
+            id: "3",
+            name: "1045 Night Mail",
+            route: "Colombo Fort - Badulla",
+            fullRoute: "Colombo Fort - Badulla 20:30 - 08:07",
+            departs: "20:30",
+            arrives: "05:37",
+            class: "Second Class Sleeperetts",
+            classColor: "bg-blue-500",
+            seats: 80,
+            available: 12,
+            price: "LKR 2,000.00",
         },
     ];
+
+    const handleTrainSelect = (trainId) => {
+        setSelectedTrain(trainId === selectedTrain ? null : trainId);
+    };
+
+    const handleContinue = () => {
+        if (selectedTrain) {
+            console.log("Selected train:", selectedTrain);
+            // Add your navigation logic here
+        }
+    };
 
     const columns = [
         {
@@ -271,24 +289,329 @@ const TicketBooking = () => {
                         <h2 className="text-2xl font-semibold mb-4">
                             Check Availability
                         </h2>
-                        <Tabs activeKey={activeTab} onChange={setActiveTab}>
-                            <Tabs.TabPane tab="Oneway Train" key="oneway">
-                                <Table
-                                    columns={columns}
-                                    dataSource={trainData}
-                                    pagination={false}
-                                />
-                            </Tabs.TabPane>
-                            {isReturnTrip && (
-                                <Tabs.TabPane tab="Return Train" key="return">
-                                    <Table
-                                        columns={columns}
-                                        dataSource={trainData}
-                                        pagination={false}
+
+                        {/* Custom Tabs */}
+                        <div className="border-b border-gray-200 mb-6">
+                            <div className="flex -mb-px">
+                                <button
+                                    className={`py-2 px-4 font-medium text-sm border-b-2 ${
+                                        activeTab === "oneway"
+                                            ? "border-blue-600 text-blue-600"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                    }`}
+                                    onClick={() => {
+                                        setActiveTab("oneway");
+                                        setIsReturnTrip(false);
+                                    }}
+                                >
+                                    Oneway Train
+                                </button>
+                                <button
+                                    className={`py-2 px-4 font-medium text-sm border-b-2 ${
+                                        activeTab === "return"
+                                            ? "border-blue-600 text-blue-600"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                    }`}
+                                    onClick={() => {
+                                        setActiveTab("return");
+                                        setIsReturnTrip(true);
+                                    }}
+                                >
+                                    Return Train
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Train Info Header */}
+                        <div className="bg-gray-50 p-4 rounded-md mb-6">
+                            <div className="flex items-center mb-1">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-5 w-5 mr-2 text-gray-700"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
                                     />
-                                </Tabs.TabPane>
-                            )}
-                        </Tabs>
+                                </svg>
+                                <span className="text-lg font-medium text-gray-700">
+                                    Train Info
+                                </span>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <div className="flex items-center text-2xl font-medium mb-2">
+                                        <span>Colombo Fort</span>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-6 w-6 mx-2"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                            />
+                                        </svg>
+                                        <span>Badulla</span>
+                                    </div>
+                                    <div className="text-gray-600">
+                                        Date - 2025-05-23
+                                    </div>
+
+                                    <div className="flex items-center mt-3 text-blue-600">
+                                        <span className="font-medium">
+                                            Select a train and proceed
+                                        </span>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5 ml-1"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M14 5l7 7m0 0l-7 7m7-7H3"
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div className="text-amber-500">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-10 w-10"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"
+                                        />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Train Table */}
+                        <div className="overflow-x-auto border border-gray-200 rounded-md">
+                            {/* Table Header */}
+                            <div className="min-w-full">
+                                <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-6 py-3 px-4">
+                                    <div className="flex items-center text-sm font-medium text-gray-700">
+                                        Train Name
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 ml-1"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="flex items-center text-sm font-medium text-gray-700">
+                                        Departs
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 ml-1 text-gray-400"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="flex items-center text-sm font-medium text-gray-700">
+                                        Arrives
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 ml-1 text-gray-400"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="flex items-center text-sm font-medium text-gray-700">
+                                        Class
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 ml-1 text-gray-400"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="flex items-center text-sm font-medium text-gray-700">
+                                        Available
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 ml-1 text-gray-400"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="flex items-center text-sm font-medium text-gray-700">
+                                        Price
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4 ml-1 text-gray-400"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                                            />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                {/* Table Body */}
+                                <div className="divide-y divide-gray-200">
+                                    {trainData.map((train) => (
+                                        <div
+                                            key={train.id}
+                                            className={`grid grid-cols-6 py-4 px-4 cursor-pointer hover:bg-gray-50 ${
+                                                selectedTrain === train.id
+                                                    ? "bg-blue-50"
+                                                    : ""
+                                            }`}
+                                            onClick={() =>
+                                                handleTrainSelect(train.id)
+                                            }
+                                        >
+                                            <div>
+                                                <div className="font-medium">
+                                                    {train.name}
+                                                </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {train.fullRoute}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center">
+                                                {train.departs}
+                                            </div>
+                                            <div className="flex items-center">
+                                                {train.arrives}
+                                            </div>
+                                            <div className="flex items-center">
+                                                <div
+                                                    className={`${train.classColor} text-white px-3 py-1 rounded-md text-sm flex items-center`}
+                                                >
+                                                    <span>{train.class}</span>
+                                                    <span className="ml-2 bg-white text-gray-800 rounded px-1.5 py-0.5 text-xs">
+                                                        {train.seats}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center">
+                                                {train.available}
+                                            </div>
+                                            <div className="flex items-center font-medium">
+                                                {train.price}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="flex justify-end mt-4">
+                            <button
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 mr-2 hover:bg-gray-50"
+                                onClick={() =>
+                                    setCurrentPage(Math.max(1, currentPage - 1))
+                                }
+                                disabled={currentPage === 1}
+                            >
+                                Previous
+                            </button>
+                            <button
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md mr-2"
+                                onClick={() => setCurrentPage(1)}
+                            >
+                                1
+                            </button>
+                            <button
+                                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                                onClick={() =>
+                                    setCurrentPage(Math.min(2, currentPage + 1))
+                                }
+                                disabled={currentPage === 2}
+                            >
+                                Next
+                            </button>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex justify-between pt-4 mt-4">
+                            <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                                Back
+                            </button>
+                            <button
+                                className={`px-4 py-2 ${
+                                    selectedTrain
+                                        ? "bg-blue-600 hover:bg-blue-700"
+                                        : "bg-blue-300 cursor-not-allowed"
+                                } text-white rounded-md transition-colors`}
+                                disabled={!selectedTrain}
+                                onClick={handleContinue}
+                            >
+                                Continue to Payment
+                            </button>
+                        </div>
                     </>
                 )}
 
