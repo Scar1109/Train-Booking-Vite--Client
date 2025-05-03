@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import Navbar from "../../components/Navbar"
+import Navbar from "../../components/NavBar"
 import TicketCard from "../../components/TicketCard"
 import { QrCode, ArrowRightLeft, AlertTriangle, CheckCircle2, Lock, Copy, Timer, Mail } from "lucide-react"
 import "../../css/Tansfer-Ticket.css" // Import the CSS file
@@ -271,7 +271,7 @@ const TransferTicket = () => {
 
       // After 3 seconds, redirect to history page
       setTimeout(() => {
-        navigate("/history")
+        navigate("/ticket-history")
       }, 3000)
     }, 1500)
   }

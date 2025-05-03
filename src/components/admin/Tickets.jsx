@@ -13,6 +13,7 @@ import {
     Space,
 } from "antd";
 import { EditOutlined, StopOutlined, CheckOutlined } from "@ant-design/icons";
+import { Icon } from "@iconify/react";
 import AxiosInstance from "../../AxiosInstance";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
@@ -174,6 +175,16 @@ function Tickets() {
                             Cancel
                         </Button>
                     </Popconfirm>
+                    <Button
+                        icon={<Icon icon="mdi:incognito" />}
+                        onClick={() =>
+                            message.info(
+                                `Viewing details for ${record.ticketId}`
+                            )
+                        }
+                        disabled={record.isRefunded}
+                        type="default"
+                    ></Button>
                 </div>
             ),
         },
@@ -272,10 +283,10 @@ function Tickets() {
                                     value > 0
                                         ? Promise.resolve()
                                         : Promise.reject(
-                                            new Error(
-                                                "Price must be greater than 0"
-                                            )
-                                        ),
+                                              new Error(
+                                                  "Price must be greater than 0"
+                                              )
+                                          ),
                             },
                         ]}
                     >

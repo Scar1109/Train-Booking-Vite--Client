@@ -17,6 +17,7 @@ import {
     StopOutlined,
     CheckOutlined,
 } from "@ant-design/icons";
+import { Icon } from "@iconify/react";
 import AxiosInstance from "../../AxiosInstance";
 
 function Users() {
@@ -44,14 +45,13 @@ function Users() {
     const handleDelete = async (id) => {
         try {
             await AxiosInstance.delete(`/api/users/deleteUser/${id}`);
-            setUsers(prev => prev.filter(user => user._id !== id));
+            setUsers((prev) => prev.filter((user) => user._id !== id));
             message.success("User deleted successfully.");
         } catch (error) {
             console.error("Error deleting user:", error);
             message.error("Failed to delete user.");
         }
     };
-    
 
     const showEditModal = (user) => {
         setEditingUser(user);
@@ -82,7 +82,10 @@ function Users() {
                     fetchUsers();
                 }
             } else {
-                const response = await AxiosInstance.post("/api/users/createUser", values);
+                const response = await AxiosInstance.post(
+                    "/api/users/createUser",
+                    values
+                );
                 if (response.data.success) {
                     message.success("User added successfully.");
                     fetchUsers();
@@ -107,7 +110,11 @@ function Users() {
                 updated
             );
             if (response.data.success) {
-                message.success(`User ${updated.isSuspended ? "suspended" : "activated"} successfully.`);
+                message.success(
+                    `User ${
+                        updated.isSuspended ? "suspended" : "activated"
+                    } successfully.`
+                );
                 fetchUsers();
                 setEditingUser(updated);
                 form.setFieldsValue(updated);
@@ -125,14 +132,16 @@ function Users() {
         {
             title: "Account Created",
             dataIndex: "accountCreated",
-            render: (text) => (text ? new Date(text).toLocaleDateString() : "N/A"),
+            render: (text) =>
+                text ? new Date(text).toLocaleDateString() : "N/A",
         },
         { title: "Bookings", dataIndex: "numBookings" },
         { title: "Total Tickets", dataIndex: "totalTicketsBought" },
         {
             title: "Last Booking",
             dataIndex: "lastBookingDate",
-            render: (text) => (text ? new Date(text).toLocaleDateString() : "N/A"),
+            render: (text) =>
+                text ? new Date(text).toLocaleDateString() : "N/A",
         },
         {
             title: "Fraud Status",
@@ -155,26 +164,47 @@ function Users() {
             key: "actions",
             render: (_, record) => (
                 <div className="flex flex-row">
-                    <Button icon={<EditOutlined />} onClick={() => showEditModal(record)} />
+                    <Button
+                        icon={<EditOutlined />}
+                        onClick={() => showEditModal(record)}
+                    />
                     <Popconfirm
                         title="Are you sure you want to delete this user?"
                         onConfirm={() => handleDelete(record._id)}
                         okText="Yes"
                         cancelText="No"
                     >
-                        <Button icon={<DeleteOutlined />} danger className="ml-2" />
+                        <Button
+                            icon={<DeleteOutlined />}
+                            danger
+                            className="ml-2"
+                        />
                     </Popconfirm>
+                    <Button
+                        icon={<Icon icon="mdi:incognito" />}
+                        onClick={() =>
+                            message.info(
+                                `Viewing details for ${record.ticketId}`
+                            )
+                        }
+                        disabled={record.isRefunded}
+                        type="default"
+                        className="ml-2"
+                    ></Button>
                 </div>
             ),
-        }
-        
+        },
     ];
 
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">Users</h2>
-                <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={showAddModal}
+                >
                     Add User
                 </Button>
             </div>
@@ -192,21 +222,33 @@ function Users() {
                     <Form.Item
                         label="First Name"
                         name="fname"
-                        rules={[{ required: true, message: "Please enter first name" }]}
+                        rules={[
+                            {
+                                required: true,
+                                message: "Please enter first name",
+                            },
+                        ]}
                     >
                         <Input />
                     </Form.Item>
                     <Form.Item
                         label="Last Name"
                         name="lname"
-                        rules={[{ required: true, message: "Please enter last name" }]}
+                        rules={[
+                            {
+                                required: true,
+                                message: "Please enter last name",
+                            },
+                        ]}
                     >
                         <Input />
                     </Form.Item>
                     <Form.Item
                         label="Email"
                         name="email"
-                        rules={[{ required: true, message: "Please enter email" }]}
+                        rules={[
+                            { required: true, message: "Please enter email" },
+                        ]}
                     >
                         <Input />
                     </Form.Item>
@@ -214,7 +256,12 @@ function Users() {
                         <Form.Item
                             label="Password"
                             name="password"
-                            rules={[{ required: true, message: "Please enter password" }]}
+                            rules={[
+                                {
+                                    required: true,
+                                    message: "Please enter password",
+                                },
+                            ]}
                         >
                             <Input.Password />
                         </Form.Item>
@@ -224,12 +271,24 @@ function Users() {
                         <Form.Item label="User Status">
                             <Space>
                                 <Button
-                                    type={editingUser.isSuspended ? "default" : "primary"}
+                                    type={
+                                        editingUser.isSuspended
+                                            ? "default"
+                                            : "primary"
+                                    }
                                     danger={editingUser.isSuspended}
-                                    icon={editingUser.isSuspended ? <CheckOutlined /> : <StopOutlined />}
+                                    icon={
+                                        editingUser.isSuspended ? (
+                                            <CheckOutlined />
+                                        ) : (
+                                            <StopOutlined />
+                                        )
+                                    }
                                     onClick={toggleUserStatus}
                                 >
-                                    {editingUser.isSuspended ? "Activate User" : "Suspend User"}
+                                    {editingUser.isSuspended
+                                        ? "Activate User"
+                                        : "Suspend User"}
                                 </Button>
                             </Space>
                         </Form.Item>

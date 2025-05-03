@@ -93,10 +93,10 @@ function TrainList() {
 
     const handleDelete = async (id) => {
         try {
-            const res = await axios.delete(`${API_URL}/trains/${id}`);
+            const res = await AxiosInstance.delete(`api/trains/${id}`);
             if (res.data.success) {
                 message.success("Train deleted successfully");
-                fetchTrains();
+                fetchTrains(pagination.current, pagination.pageSize); // Re-fetch data after deletion
             } else {
                 message.error("Failed to delete train");
             }
@@ -126,17 +126,17 @@ function TrainList() {
                     price: cls.price,
                 })),
             };
-
+    
             let response;
             if (editingTrain) {
-                response = await axios.put(
-                    `${API_URL}/trains/${editingTrain._id}`,
+                response = await AxiosInstance.put(
+                    `api/trains/${editingTrain._id}`,
                     formattedValues
                 );
             } else {
-                response = await axios.post(`${API_URL}/trains`, formattedValues);
+                response = await AxiosInstance.post(`api/trains`, formattedValues);
             }
-
+    
             if (response.data.success) {
                 message.success({
                     content: editingTrain
@@ -145,7 +145,7 @@ function TrainList() {
                     duration: 2,
                 });
                 setIsModalVisible(false);
-                fetchTrains();
+                fetchTrains(pagination.current, pagination.pageSize); // Re-fetch data after submit
             } else {
                 message.error({
                     content: response.data.message || "Failed to save train",
@@ -160,7 +160,6 @@ function TrainList() {
             });
         }
     };
-
     const colorMap = {
         "Air Conditioned Saloon": "bg-indigo-500 text-white",
         "Second Class Reserved Seats": "bg-emerald-500 text-white",
